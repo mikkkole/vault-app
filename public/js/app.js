@@ -586,7 +586,7 @@ async function confirmDelete() {
 // View Toggle
 function setStorageView(view) {
     document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('toggle-' + view).classList.add('active');
+    event.currentTarget.classList.add('active');
 }
 
 // Notifications
