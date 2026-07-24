@@ -1,0 +1,13 @@
+{
+  "name": "vault",
+  "version": "1.0.0",
+  "description": "Vault - приложение для учёта личных вещей",
+  "main": "backend-node/server.js",
+  "scripts": {
+    "start": "node backend-node/server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {}
+}

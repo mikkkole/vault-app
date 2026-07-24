@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Vault - Найди любую вещь</title>
+    <meta name="description" content="Фотографируешь - находишь, где лежит. Учёт личных вещей без хаоса.">
+    <link rel="canonical" href="https://vault.app/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://vault.app/">
+    <meta property="og:title" content="Business Vault - Найди любую вещь за 10 секунд">
+    <meta property="og:description" content="Фотографируешь - находишь, где лежит. Учёт личных вещей без хаоса.">
+    <meta property="og:image" content="https://vault.app/assets/images/og-image.png">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:site_name" content="Business Vault">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Business Vault - Найди любую вещь за 10 секунд">
+    <meta name="twitter:description" content="Фотографируешь - находишь, где лежит. Учёт личных вещей без хаоса.">
+    <meta name="twitter:image" content="https://vault.app/assets/images/og-image.png">
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Business Vault",
+        "url": "https://vault.app",
+        "description": "Фотографируешь - находишь, где лежит. Учёт личных вещей без хаоса.",
+        "applicationCategory": "UtilityApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "RUB",
+            "description": "Бесплатно до 30 вещей"
+        }
+    }
+    </script>
+</head>
+<body class="landing">
+
+    <header class="landing-header">
+        <div class="container">
+            <div class="logo">Vault</div>
+            <nav>
+                <a href="#features">Возможности</a>
+                <a href="#how">Как работает</a>
+                <a href="#pricing">Цена</a>
+                <a href="app.html" class="btn btn-outline">Войти</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Найди любую вещь<br><span class="highlight">за 10 секунд</span></h1>
+            <p class="subtitle">Фотографируешь - кладёшь на полку - находишь поиском. Больше никакого хаоса.</p>
+            <form class="waitlist-form" id="waitlistForm">
+                <input type="email" placeholder="Твой email" required>
+                <button type="submit" class="btn btn-primary">Попробовать бесплатно</button>
+            </form>
+            <p class="waitlist-note">Бесплатно на 30 дней после запуска. Без привязки карты.</p>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Почему Vault</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">&#128247;</div>
+                    <h3>Фото + 1 слово</h3>
+                    <p>Фотографируй и назови вещь одной фразой. Всё. Больше никаких таблиц.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">&#128269;</div>
+                    <h3>Мгновенный поиск</h3>
+                    <p>Напиши "книга" или "красный шарф" - Vault покажет где лежит.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">&#127968;</div>
+                    <h3>Полки и шкафы</h3>
+                    <p>Создавай "комнаты", "шкафы", "ящики" - как в реальной жизни.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">&#128274;</div>
+                    <h3>Приватно</h3>
+                    <p>Твои данные на твоём устройстве. Vault не продаёт информацию.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how" class="how-it-works">
+        <div class="container">
+            <h2>Как это работает</h2>
+            <div class="steps">
+                <div class="step">
+                    <span class="step-number">1</span>
+                    <h3>Фотографируй</h3>
+                    <p>Сфотографируй вещь и положи на полку / в шкаф</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">2</span>
+                    <h3>Назови</h3>
+                    <p>Добавь одно слово или фразу: "красный шарф"</p>
+                </div>
+                <div class="step">
+                    <span class="step-number">3</span>
+                    <h3>Найди</h3>
+                    <p>Введи запрос в поиск и получи полку / шкаф</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2>Простая цена</h2>
+            <div class="pricing-cards">
+                <div class="pricing-card">
+                    <h3>Бесплатно</h3>
+                    <div class="price">0 <small>₽/мес</small></div>
+                    <ul>
+                        <li>До 30 вещей</li>
+                        <li>Фото + поиск</li>
+                        <li>Полки и шкафы</li>
+                    </ul>
+                    <a href="app.html" class="btn btn-outline">Начать</a>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="badge">Популярный</div>
+                    <h3>Pro</h3>
+                    <div class="price">149 <small>₽/мес</small></div>
+                    <ul>
+                        <li>Безлимит вещей</li>
+                        <li>Всё из "Бесплатно"</li>
+                        <li>Приоритетная поддержка</li>
+                    </ul>
+                    <a href="app.html" class="btn btn-primary">Подключить</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <div class="container">
+            <p>&copy; 2026 Business Vault. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.getElementById('waitlistForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = this.querySelector('input[type="email"]').value;
+        const btn = this.querySelector('button');
+        const origText = btn.textContent;
+        btn.textContent = 'Отправляем...';
+        btn.disabled = true;
+        try {
+            await fetch('api/analytics.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({event_name: 'waitlist_signup', event_data: {email: email}})
+            });
+            btn.textContent = 'Готово! Мы напишем вам.';
+        } catch (err) {
+            btn.textContent = origText;
+            btn.disabled = false;
+            alert('Ошибка. Попробуйте позже.');
+        }
+    });
+    </script>
+</body>
+</html>

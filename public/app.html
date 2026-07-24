@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6C5CE7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+    <!-- Onboarding -->
+    <div class="onboarding active" id="onboarding">
+        <div class="onboarding-illustration">
+            <div class="onboarding-illustration-card">
+                <span id="onboarding-emoji">📸</span>
+            </div>
+        </div>
+        <div>
+            <h2 class="onboarding-title" id="onboarding-title">Больше никогда не теряй вещи</h2>
+            <p class="onboarding-text" id="onboarding-text">Сфотографируй - и находи любую вещь за секунду</p>
+        </div>
+        <div class="onboarding-progress" id="onboarding-progress">
+            <div class="onboarding-dot active" data-step="0"></div>
+            <div class="onboarding-dot" data-step="1"></div>
+            <div class="onboarding-dot" data-step="2"></div>
+        </div>
+        <button class="onboarding-cta" id="onboarding-cta" onclick="closeOnboarding()">
+            Далее
+        </button>
+    </div>
+
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="screen" style="display:none">
+        <div class="phone-frame">
+            <div class="header">
+                <h1>Добро пожаловать</h1>
+                <p class="header-subtitle">Войдите или создайте аккаунт</p>
+            </div>
+            <div style="padding: 24px 16px;">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="auth-email" class="form-input" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Пароль</label>
+                    <input type="password" id="auth-password" class="form-input" placeholder="Минимум 6 символов">
+                </div>
+                <div class="form-group" id="auth-name-group" style="display:none;">
+                    <label class="form-label">Имя</label>
+                    <input type="text" id="auth-name" class="form-input" placeholder="Ваше имя">
+                </div>
+                <button class="greeting-cta" style="width:100%;margin-top:16px;" onclick="handleAuth()">Войти</button>
+                <p style="text-align:center;margin-top:16px;color:var(--text-secondary);font-size:14px;">
+                    <span id="auth-toggle" onclick="toggleAuthMode()" style="color:var(--primary);cursor:pointer;font-weight:600;">Создать аккаунт</span>
+                </p>
+                <p id="auth-error" style="display:none;color:var(--error);text-align:center;margin-top:12px;font-size:14px;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="phone-frame" id="app-frame" style="display:none;">
+        <!-- Home Screen -->
+        <div class="screen active" id="screen-home">
+            <div class="header" style="position: relative; overflow: hidden;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, rgba(108,92,231,0.08) 0%, rgba(108,92,231,0) 40%); pointer-events: none;"></div>
+                <div class="header-hero">
+                    <div class="header-hero-photo" id="home-hero-photo">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2 12 5.5 8 2l-4.38 1.46a2 2 0 00-1.34 1.86v14.36A2 2 0 004.62 21.54L8 20l4 3.5 4-3.5 4.38 1.46a2 2 0 002.34-1.86V5.32a2 2 0 00-1.34-1.86z"/><line x1="12" y1="22" x2="12" y2="5.5"/></svg>
+                    </div>
+                    <div class="header-hero-text">
+                        <h1 id="home-title">Мои вещи</h1>
+                        <div class="header-subtitle" id="home-subtitle">Всё под рукой</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="home-content">
+                <!-- Empty state -->
+                <div id="home-empty" style="display: none;">
+                    <div class="greeting-section">
+                        <div class="greeting-icon" style="background: linear-gradient(135deg, #FDCB6E, #E17055);">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                        <h2 class="greeting-title">Забыли, где ключи?</h2>
+                        <p class="greeting-subtitle">Добавьте первую вещь - и больше никогда не ищите</p>
+                        <button class="greeting-cta" onclick="showAddItem()">Добавить первую вещь</button>
+                    </div>
+                </div>
+
+                <!-- With items -->
+                <div id="home-with-items">
+                    <div class="stats-bar">
+                        <div class="stat">
+                            <div class="stat-value purple" id="stat-items">0</div>
+                            <div class="stat-label">Вещи</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value green" id="stat-containers">0</div>
+                            <div class="stat-label">Места</div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <h2 class="section-title">Недавние</h2>
+                            <span class="section-link" onclick="showScreen('search')">Все вещи →</span>
+                        </div>
+                        <div class="items-grid" id="recent-items"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAB -->
+            <button class="fab" id="fab-add" onclick="toggleFabPopup()">
+                <div class="fab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </div>
+            </button>
+            <div class="fab-popup" id="fab-popup">
+                <button class="fab-popup-item" onclick="showAddItem(); closeFabPopup();">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M20.38 3.46L16 2 12 5.5 8 2l-4.38 1.46a2 2 0 00-1.34 1.86v14.36A2 2 0 004.62 21.54L8 20l4 3.5 4-3.5 4.38 1.46a2 2 0 002.34-1.86V5.32a2 2 0 00-1.34-1.86z"/></svg>
+                    Добавить вещь
+                </button>
+                <button class="fab-popup-item" onclick="showAddContainer(); closeFabPopup();">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                    Добавить место
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Screen -->
+        <div class="screen" id="screen-search">
+            <div class="header">
+                <h1>Найти вещь</h1>
+                <p class="header-subtitle">Ищите по названию или месту</p>
+            </div>
+
+            <div class="filter-group">
+                <div class="tags-container">
+                    <div class="tags" id="filter-categories">
+                        <span class="tag active" onclick="toggleCategory(this)">Все</span>
+                        <span class="tag" onclick="toggleCategory(this)">👕 Одежда</span>
+                        <span class="tag" onclick="toggleCategory(this)">👟 Обувь</span>
+                        <span class="tag" onclick="toggleCategory(this)">🔧 Инструменты</span>
+                        <span class="tag" onclick="toggleCategory(this)">📚 Книги</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-group" style="margin-top: 4px;">
+                <div class="tags-container">
+                    <div class="tags" id="filter-locations">
+                        <span class="tag active" onclick="toggleLocation(this)">📍 Все места</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section" style="margin-top: 16px;" id="search-results">
+                <div class="items-grid" id="search-items"></div>
+            </div>
+
+            <div id="search-empty" class="empty-state" style="display:none;">
+                <div class="empty-icon">🔍</div>
+                <div class="empty-title">Ничего не найдено</div>
+                <div class="empty-text">Попробуйте другой запрос</div>
+            </div>
+
+            <div class="search-bar-bottom">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Что ищете?" id="search-input" oninput="onSearchInput(this)">
+            </div>
+        </div>
+
+        <!-- Storage Screen -->
+        <div class="screen" id="screen-storage">
+            <div class="header">
+                <div class="header-top-row">
+                    <h1>Хранилища</h1>
+                    <div class="view-toggle" id="storage-view-toggle">
+                        <button class="view-toggle-btn active" onclick="setStorageView('grid')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        </button>
+                        <button class="view-toggle-btn" onclick="setStorageView('list')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="header-subtitle">Все ваши места</div>
+            </div>
+
+            <div class="storage-breadcrumbs" id="storage-breadcrumbs">
+                <div class="breadcrumb" id="storage-breadcrumbs-inner"></div>
+            </div>
+
+            <div id="storage-content" class="storage-tree"></div>
+
+            <button class="storage-fab" id="storage-fab" onclick="showAddContainer()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+        </div>
+
+        <!-- Profile Screen -->
+        <div class="screen" id="screen-profile">
+            <div class="header">
+                <h1>Профиль</h1>
+            </div>
+
+            <div class="profile-user-card">
+                <div class="profile-avatar" id="profile-avatar">?</div>
+                <div class="profile-user-info">
+                    <div class="profile-user-name" id="profile-name">Пользователь</div>
+                    <div class="profile-user-plan">Базовый план</div>
+                </div>
+            </div>
+
+            <div class="profile-section-title">Статистика</div>
+            <div class="storage-progress">
+                <div class="storage-progress-label">Ваши вещи</div>
+                <div class="storage-progress-bar">
+                    <div class="storage-progress-fill green" id="profile-progress" style="width: 0%;"></div>
+                </div>
+                <div class="storage-progress-text" id="profile-stats">0 вещей, 0 мест</div>
+            </div>
+
+            <div class="profile-section-title" style="margin-top: 16px;">Настройки</div>
+            <div class="section">
+                <div class="tree-item" onclick="toggleNotifications()">
+                    <div class="tree-icon">🔔</div>
+                    <div class="tree-info">
+                        <div class="tree-name">Уведомления</div>
+                        <div class="tree-count" id="notifications-status">Отключены</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="profile-logout-btn" onclick="logout()">Выйти</button>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="showScreen('home')">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Главная</span>
+            </button>
+            <button class="nav-item" onclick="showScreen('search')">
+                <span class="nav-icon">🔍</span>
+                <span class="nav-label">Найти</span>
+            </button>
+            <button class="nav-item" onclick="showScreen('storage')">
+                <span class="nav-icon">📦</span>
+                <span class="nav-label">Места</span>
+            </button>
+            <button class="nav-item" onclick="showScreen('profile')">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Профиль</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Add Item Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="add-item-overlay" onclick="closeAddItem()"></div>
+    <div class="bottom-sheet" id="add-item-sheet">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-header">
+            <button class="bottom-sheet-close" onclick="closeAddItem()">✕</button>
+            <div class="bottom-sheet-title">Добавить вещь</div>
+            <button class="bottom-sheet-save" onclick="saveItem()">Сохранить</button>
+        </div>
+        <div class="bottom-sheet-body">
+            <div class="camera-area-sheet" onclick="document.getElementById('photoInput').click()">
+                <div class="camera-icon">📷</div>
+                <div class="camera-text">Нажмите чтобы сделать фото</div>
+                <div class="camera-hint">Или выберите из галереи</div>
+                <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(this)">
+                <img id="photoPreview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:12px;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Название</label>
+                <input type="text" id="item-name" class="form-input" placeholder="Красный шарф">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Место</label>
+                <select id="item-container" class="form-input">
+                    <option value="">Выберите место</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Цвет (необязательно)</label>
+                <input type="text" id="item-color" class="form-input" placeholder="Красный">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Категория (необязательно)</label>
+                <input type="text" id="item-category" class="form-input" placeholder="Одежда">
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Container Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="add-container-overlay" onclick="closeAddContainer()"></div>
+    <div class="bottom-sheet" id="add-container-sheet">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-header">
+            <button class="bottom-sheet-close" onclick="closeAddContainer()">✕</button>
+            <div class="bottom-sheet-title">Добавить место</div>
+            <button class="bottom-sheet-save" onclick="saveContainer()">Сохранить</button>
+        </div>
+        <div class="bottom-sheet-body">
+            <div class="form-group">
+                <label class="form-label">Название</label>
+                <input type="text" id="container-name" class="form-input" placeholder="Шкаф в прихожей">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Тип</label>
+                <select id="container-type" class="form-input">
+                    <option value="room">Комната</option>
+                    <option value="furniture">Мебель</option>
+                    <option value="box">Ящик</option>
+                    <option value="shelf">Полка</option>
+                    <option value="other">Другое</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Родительское место (необязательно)</label>
+                <select id="container-parent" class="form-input">
+                    <option value="">Нет (корневое)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Detail Modal -->
+    <div class="modal" id="item-detail-modal">
+        <div class="modal-header">
+            <button class="modal-close" onclick="closeItemDetail()">←</button>
+            <div class="modal-title" id="detail-title">Название вещи</div>
+            <button class="modal-overflow" onclick="toggleDetailMenu()">⋯</button>
+        </div>
+        <div class="modal-body" id="detail-body">
+            <div class="detail-photo-container" id="detail-photo">
+                <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:80px;border-radius:12px;">📷</div>
+            </div>
+            <div class="detail-location-compact" id="detail-location">
+                <span class="location-home-icon">📍</span>
+                <span id="detail-location-text">Место не указано</span>
+            </div>
+            <div class="detail-actions-row">
+                <button class="detail-action-btn primary" onclick="editCurrentItem()">✏️ Редактировать</button>
+                <button class="detail-action-btn danger" onclick="deleteCurrentItem()">🗑️ Удалить</button>
+            </div>
+            <div class="detail-collapsible open">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span class="collapsible-title">Информация</span>
+                    <span class="collapsible-arrow">→</span>
+                </div>
+                <div class="collapsible-content">
+                    <p class="detail-history-line" id="detail-info">Нет дополнительной информации</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Dialog -->
+    <div class="detail-confirm-overlay" id="confirm-delete-overlay">
+        <div class="detail-confirm-dialog">
+            <div class="detail-confirm-title">Удалить вещь?</div>
+            <div class="detail-confirm-text">Это действие нельзя отменить</div>
+            <div class="detail-confirm-actions">
+                <button class="detail-confirm-btn cancel" onclick="closeConfirmDelete()">Отмена</button>
+                <button class="detail-confirm-btn confirm danger" onclick="confirmDelete()">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snackbar -->
+    <div class="snackbar" id="snackbar">
+        <span id="snackbar-text"></span>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
