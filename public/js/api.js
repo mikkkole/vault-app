@@ -1,5 +1,7 @@
-// API Base URL - relative path (served by same Express server)
-const API_BASE = '/api/';
+// API Base URL - works for both web and native app
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? '/api/'
+    : 'https://vault-app-8vjd.onrender.com/api/';
 
 class VaultAPI {
     constructor() {
