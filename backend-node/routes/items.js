@@ -3,19 +3,28 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 
-// Get all items
+// Get all items (with images and container name)
 router.get('/', auth, async (req, res) => {
   try {
     const { container_id } = req.query;
-    let query = 'SELECT * FROM items WHERE user_id = $1';
+    let query = `
+      SELECT i.*, c.name as container_name,
+        COALESCE(
+          (SELECT json_agg(image_path ORDER BY sort_order)
+           FROM item_images WHERE item_id = i.id),
+          '[]'::json
+        ) as images
+      FROM items i
+      LEFT JOIN containers c ON i.container_id = c.id
+      WHERE i.user_id = $1`;
     const params = [req.userId];
 
     if (container_id) {
-      query += ' AND container_id = $2';
+      query += ' AND i.container_id = $2';
       params.push(container_id);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY i.created_at DESC';
     const result = await pool.query(query, params);
     res.json({ data: result.rows });
   } catch (error) {

@@ -12,10 +12,12 @@ router.get('/', auth, async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT i.*,
-        (SELECT image_path FROM item_images WHERE item_id = i.id AND is_primary = true LIMIT 1) as primary_image,
-        c.name as container_name,
-        c.type as container_type
+      `SELECT i.*, c.name as container_name,
+        COALESCE(
+          (SELECT json_agg(image_path ORDER BY sort_order)
+           FROM item_images WHERE item_id = i.id),
+          '[]'::json
+        ) as images
        FROM items i
        LEFT JOIN containers c ON i.container_id = c.id
        WHERE i.user_id = $1
