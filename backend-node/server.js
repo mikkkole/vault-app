@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const pool = require('./db');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
@@ -10,6 +11,15 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Rate limiting: 100 requests per hour per IP
+app.use('/api/', rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, try again later' }
+}));
 
 // Serve frontend from public/ (one level up from backend-node/)
 app.use(express.static(path.join(__dirname, '..', 'public')));
