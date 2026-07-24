@@ -3,31 +3,15 @@ const router = express.Router();
 const pool = require('../db');
 const auth = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+cloudinary.config();
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
+    if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
       cb(new Error('Only image files are allowed'));
@@ -57,7 +41,13 @@ router.post('/', auth, upload.single('photo'), async (req, res) => {
       return res.status(404).json({ error: 'Item not found' });
     }
 
-    const imagePath = `/uploads/${req.file.filename}`;
+    // Upload to Cloudinary
+    const b64 = req.file.buffer.toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: 'vault',
+      transformation: [{ width: 800, height: 800, crop: 'limit' }]
+    });
 
     const existingImages = await pool.query(
       'SELECT COUNT(*) FROM item_images WHERE item_id = $1',
@@ -66,12 +56,12 @@ router.post('/', auth, upload.single('photo'), async (req, res) => {
 
     const isPrimary = parseInt(existingImages.rows[0].count) === 0;
 
-    const result = await pool.query(
+    const dbResult = await pool.query(
       'INSERT INTO item_images (item_id, image_path, is_primary) VALUES ($1, $2, $3) RETURNING *',
-      [item_id, imagePath, isPrimary]
+      [item_id, result.secure_url, isPrimary]
     );
 
-    res.status(201).json({ data: result.rows[0] });
+    res.status(201).json({ data: dbResult.rows[0] });
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -100,9 +90,11 @@ router.delete('/', auth, async (req, res) => {
 
     const image = imageCheck.rows[0];
 
-    const filePath = path.join(__dirname, '..', image.image_path);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    // Delete from Cloudinary if it's a cloudinary URL
+    if (image.image_path.includes('cloudinary.com')) {
+      const parts = image.image_path.split('/');
+      const publicId = parts.slice(parts.indexOf('upload') + 1).join('/').replace(/\.[^.]+$/, '');
+      await cloudinary.uploader.destroy(publicId);
     }
 
     await pool.query('DELETE FROM item_images WHERE id = $1', [image_id]);
