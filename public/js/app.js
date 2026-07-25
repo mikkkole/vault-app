@@ -576,14 +576,6 @@ function loadProfile() {
 }
 
 // FAB
-function toggleFabPopup() {
-    document.getElementById('fab-popup').classList.toggle('active');
-}
-
-function closeFabPopup() {
-    document.getElementById('fab-popup').classList.remove('active');
-}
-
 // ===== Mass Add Functions =====
 function openMassAdd() {
     const lastContainer = localStorage.getItem('last-container-id');
@@ -1475,12 +1467,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Close popups on outside click
     document.addEventListener('click', function(e) {
-        const fab = document.getElementById('fab-add');
-        const popup = document.getElementById('fab-popup');
-        if (popup && popup.classList.contains('active') && !popup.contains(e.target) && !fab.contains(e.target)) {
-            popup.classList.remove('active');
-        }
-
         // Close container dropdown
         const dropdown = document.getElementById('container-dropdown');
         if (dropdown && dropdown.classList.contains('active') && !dropdown.contains(e.target)) {

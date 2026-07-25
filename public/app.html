@@ -120,25 +120,21 @@
             </div>
 
             <!-- FAB -->
-            <button class="fab" id="fab-add" onclick="toggleFabPopup()">
+            <button class="fab" id="fab-add" onclick="showAddItem()">
                 <div class="fab-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </div>
             </button>
-            <div class="fab-popup" id="fab-popup">
-                <button class="fab-popup-item" onclick="showAddItem(); closeFabPopup();">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Добавить вещь
-                </button>
-                <button class="fab-popup-item" onclick="openMassAdd(); closeFabPopup();">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                    Массовое добавление
-                </button>
-                <button class="fab-popup-item" onclick="showAddContainer(); closeFabPopup();">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-                    Добавить место
-                </button>
-            </div>
+            <button class="fab fab-mass" id="fab-mass-add" onclick="openMassAdd()">
+                <div class="fab-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                </div>
+            </button>
         </div>
 
         <!-- Search Screen -->
