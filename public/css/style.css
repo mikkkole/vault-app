@@ -286,7 +286,6 @@ body {
 .fab {
     position: fixed;
     bottom: calc(70px + env(safe-area-inset-bottom));
-    right: calc(50% - 195px + 16px);
     width: 56px;
     height: 56px;
     border-radius: 16px;
@@ -320,9 +319,12 @@ body {
 .fab-mass:active {
     box-shadow: 0 2px 8px rgba(0, 184, 148, 0.3);
 }
+.fab:not(.fab-mass) {
+    right: calc(50% - 195px + 16px);
+}
 @media (max-width: 390px) {
-    .fab { right: 16px; }
     .fab-mass { right: 80px; }
+    .fab:not(.fab-mass) { right: 16px; }
 }
 
 /* Search bar - sticky bottom */
