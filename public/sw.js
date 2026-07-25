@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vault-v2';
+const CACHE_NAME = 'vault-v3';
 const STATIC_ASSETS = [
     '/',
     '/app.html',
@@ -7,6 +7,8 @@ const STATIC_ASSETS = [
     '/js/auth.js',
     '/js/app.js',
     '/js/push.js',
+    '/js/payments.js',
+    '/js/onboarding.js',
     '/manifest.json'
 ];
 
@@ -28,6 +30,9 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
+
+    // Skip non-http schemes (chrome-extension, etc.)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(
