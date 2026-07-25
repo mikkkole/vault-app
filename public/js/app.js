@@ -710,6 +710,8 @@ function handleContainerPhotoSelect(input, previewId, placeholderId) {
     reader.readAsDataURL(input.files[0]);
 }
 
+let editingItemId = null;
+
 let currentContainer = null;
 
 function editContainerById(id) {
@@ -849,6 +851,7 @@ function editCurrentItem() {
 }
 
 async function openEditItem(item) {
+    editingItemId = item.id;
     document.getElementById('edit-item-name').value = item.name || '';
     document.getElementById('edit-item-color').value = item.color || '';
     document.getElementById('edit-item-category').value = item.category || '';
@@ -881,6 +884,7 @@ function closeEditItem() {
     document.getElementById('edit-item-overlay').classList.remove('active');
     document.getElementById('edit-item-sheet').classList.remove('active');
     document.getElementById('editPhotoInput').value = '';
+    editingItemId = null;
 }
 
 function handleEditPhotoSelect(input) {
@@ -897,7 +901,7 @@ function handleEditPhotoSelect(input) {
 }
 
 async function saveItemEdit() {
-    if (!currentItem) return;
+    if (!editingItemId) return;
     const name = document.getElementById('edit-item-name').value.trim();
     if (!name) {
         showSnackbar('Введите название вещи');
@@ -908,7 +912,7 @@ async function saveItemEdit() {
     setBtnLoading(btn, true);
 
     try {
-        await api.updateItem(currentItem.id, {
+        await api.updateItem(editingItemId, {
             name: name,
             container_id: document.getElementById('edit-item-container').value || null,
             color: document.getElementById('edit-item-color').value.trim() || null,
@@ -917,7 +921,7 @@ async function saveItemEdit() {
 
         const photoInput = document.getElementById('editPhotoInput');
         if (photoInput.files[0]) {
-            await api.uploadPhoto(currentItem.id, photoInput.files[0]);
+            await api.uploadPhoto(editingItemId, photoInput.files[0]);
         }
 
         closeEditItem();
