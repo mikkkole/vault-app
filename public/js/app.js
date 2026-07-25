@@ -412,6 +412,7 @@ function toggleLocation(el) {
 
 // Storage
 let currentStoragePath = [];
+let containerTree = [];
 
 async function loadStorage() {
     // Show skeleton
@@ -421,11 +422,11 @@ async function loadStorage() {
     }
 
     try {
-        const containers = await api.getContainerTree();
+        containerTree = await api.getContainerTree();
         allContainers = await api.getContainers();
         cache.set('containers', allContainers);
         currentStoragePath = [];
-        renderStorageTree(containers);
+        renderStorageTree(containerTree);
     } catch (err) {
         console.error('Load storage error:', err);
     }
@@ -545,19 +546,33 @@ function getItemsForCurrentStorage() {
 }
 
 function drillIntoStorage(id, name, icon) {
-    const containers = currentStoragePath.length > 0
-        ? currentStoragePath[currentStoragePath.length - 1].children || allContainers
-        : allContainers;
-    const container = containers.find(c => c.id === id);
+    // Find the node in the tree to get its children
+    function findNode(nodes, targetId) {
+        for (const node of nodes) {
+            if (node.id === targetId) return node;
+            if (node.children) {
+                const found = findNode(node.children, targetId);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
 
-    currentStoragePath.push({ id, name, icon, children: container?.children || [] });
-    renderStorageTree(container?.children || []);
+    const parentNode = currentStoragePath.length > 0
+        ? currentStoragePath[currentStoragePath.length - 1]
+        : null;
+
+    const searchNodes = parentNode ? (parentNode.children || []) : containerTree;
+    const node = findNode(searchNodes, id);
+
+    currentStoragePath.push({ id, name, icon, children: node?.children || [] });
+    renderStorageTree(node?.children || []);
 }
 
 function navigateToStorage(index) {
     if (index === 0) {
         currentStoragePath = [];
-        loadStorage();
+        renderStorageTree(containerTree);
     } else {
         currentStoragePath = currentStoragePath.slice(0, index);
         const lastContainer = currentStoragePath[currentStoragePath.length - 1];
