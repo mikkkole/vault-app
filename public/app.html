@@ -295,11 +295,19 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Цвет (необязательно)</label>
-                <input type="text" id="item-color" class="form-input" placeholder="Красный">
+                <div class="color-select">
+                    <input type="text" id="item-color" class="form-input" placeholder="Красный"
+                           oninput="filterColors(this.value)" onfocus="loadExistingColors(); filterColors(this.value)">
+                    <div class="color-dropdown" id="color-dropdown"></div>
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Категория (необязательно)</label>
-                <input type="text" id="item-category" class="form-input" placeholder="Одежда">
+                <div class="category-select">
+                    <input type="text" id="item-category" class="form-input" placeholder="Одежда"
+                           oninput="filterCategories(this.value)" onfocus="loadExistingCategories(); filterCategories(this.value)">
+                    <div class="category-dropdown" id="category-dropdown"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -407,6 +415,12 @@
                     <option value="other">Другое</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label class="form-label">Родительское место</label>
+                <select id="edit-container-parent" class="form-input">
+                    <option value="">Нет (корневое)</option>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -415,7 +429,19 @@
         <div class="modal-header">
             <button class="modal-close" onclick="closeItemDetail()">←</button>
             <div class="modal-title" id="detail-title">Название вещи</div>
-            <button class="modal-overflow" onclick="toggleDetailMenu()">⋯</button>
+            <div class="item-detail-menu">
+                <button class="menu-toggle" onclick="toggleDetailMenu()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="5" r="2" fill="currentColor"/>
+                        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                        <circle cx="12" cy="19" r="2" fill="currentColor"/>
+                    </svg>
+                </button>
+                <div class="menu-dropdown" id="item-menu-dropdown">
+                    <button onclick="editCurrentItem(); toggleDetailMenu();">Редактировать</button>
+                    <button onclick="deleteCurrentItem(); toggleDetailMenu();">Удалить</button>
+                </div>
+            </div>
         </div>
         <div class="modal-body" id="detail-body">
             <div class="detail-photo-container" id="detail-photo">

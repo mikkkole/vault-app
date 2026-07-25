@@ -904,16 +904,69 @@ async function saveAllItems() {
 function showAddItem() {
     document.getElementById('add-item-overlay').classList.add('active');
     document.getElementById('add-item-sheet').classList.add('active');
+    document.getElementById('add-item-footer').style.display = 'block';
     loadContainersForSelect();
 }
 
 function closeAddItem() {
     document.getElementById('add-item-overlay').classList.remove('active');
     document.getElementById('add-item-sheet').classList.remove('active');
+    document.getElementById('add-item-footer').style.display = 'none';
     document.getElementById('item-name').value = '';
     document.getElementById('item-color').value = '';
     document.getElementById('item-category').value = '';
     document.getElementById('photoPreview').style.display = 'none';
+    // Close dropdowns
+    document.querySelectorAll('.category-dropdown, .color-dropdown').forEach(d => d.classList.remove('active'));
+}
+
+// Category/Color dropdowns
+function loadExistingCategories() {
+    const categories = [...new Set(allItems.map(item => item.category).filter(Boolean))].sort();
+    const dropdown = document.getElementById('category-dropdown');
+    if (!dropdown) return;
+    dropdown.innerHTML = categories.map(cat =>
+        `<div class="category-option" onclick="selectCategory('${escapeHtml(cat)}')">${escapeHtml(cat)}</div>`
+    ).join('');
+}
+
+function loadExistingColors() {
+    const colors = [...new Set(allItems.map(item => item.color).filter(Boolean))].sort();
+    const dropdown = document.getElementById('color-dropdown');
+    if (!dropdown) return;
+    dropdown.innerHTML = colors.map(color =>
+        `<div class="color-option" onclick="selectColor('${escapeHtml(color)}')">${escapeHtml(color)}</div>`
+    ).join('');
+}
+
+function filterCategories(value) {
+    const dropdown = document.getElementById('category-dropdown');
+    if (!dropdown) return;
+    const options = dropdown.querySelectorAll('.category-option');
+    options.forEach(opt => {
+        opt.style.display = opt.textContent.toLowerCase().includes(value.toLowerCase()) ? 'block' : 'none';
+    });
+    dropdown.classList.add('active');
+}
+
+function filterColors(value) {
+    const dropdown = document.getElementById('color-dropdown');
+    if (!dropdown) return;
+    const options = dropdown.querySelectorAll('.color-option');
+    options.forEach(opt => {
+        opt.style.display = opt.textContent.toLowerCase().includes(value.toLowerCase()) ? 'block' : 'none';
+    });
+    dropdown.classList.add('active');
+}
+
+function selectCategory(cat) {
+    document.getElementById('item-category').value = cat;
+    document.getElementById('category-dropdown').classList.remove('active');
+}
+
+function selectColor(color) {
+    document.getElementById('item-color').value = color;
+    document.getElementById('color-dropdown').classList.remove('active');
 }
 
 function handlePhotoSelect(input) {
@@ -1080,6 +1133,9 @@ function openEditContainer(container) {
     document.getElementById('edit-container-name').value = container.name || '';
     document.getElementById('edit-container-type').value = container.type || 'other';
 
+    // Load parent options
+    loadContainerParentOptions(container.id, container.parent_id);
+
     const preview = document.getElementById('edit-container-photo-preview');
     const placeholder = document.getElementById('edit-container-photo-placeholder');
     if (container.photo) {
@@ -1093,6 +1149,24 @@ function openEditContainer(container) {
 
     document.getElementById('edit-container-overlay').classList.add('active');
     document.getElementById('edit-container-sheet').classList.add('active');
+}
+
+function loadContainerParentOptions(currentId, currentParentId) {
+    const containers = allContainers.filter(c => c.id !== currentId);
+    const select = document.getElementById('edit-container-parent');
+    select.innerHTML = '<option value="">Нет (корневое)</option>';
+
+    function addOptions(parentId, level) {
+        const children = containers.filter(c => c.parent_id === parentId);
+        children.forEach(child => {
+            const indent = '\u2014'.repeat(level);
+            const selected = child.id === currentParentId ? 'selected' : '';
+            select.innerHTML += `<option value="${child.id}" ${selected}>${indent} ${escapeHtml(child.name)}</option>`;
+            addOptions(child.id, level + 1);
+        });
+    }
+
+    addOptions(null, 0);
 }
 
 function closeEditContainer() {
@@ -1116,7 +1190,8 @@ async function saveContainerEdit() {
     try {
         await api.updateContainer(currentContainer.id, {
             name: name,
-            type: document.getElementById('edit-container-type').value
+            type: document.getElementById('edit-container-type').value,
+            parent_id: document.getElementById('edit-container-parent').value || null
         });
 
         const photoInput = document.getElementById('editContainerPhotoInput');
@@ -1140,7 +1215,16 @@ async function loadContainersForSelect() {
         const containers = await api.getContainers();
         const select = document.getElementById('item-container');
         select.innerHTML = '<option value="">Выберите место</option>' +
-            containers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+            containers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('') +
+            '<option value="__new__">+ Создать новое место</option>';
+
+        select.onchange = function() {
+            if (this.value === '__new__') {
+                this.value = '';
+                closeAddItem();
+                showAddContainer();
+            }
+        };
     } catch (err) {
         console.error(err);
     }
@@ -1190,7 +1274,10 @@ function closeItemDetail() {
 }
 
 function toggleDetailMenu() {
-    // TODO: add overflow menu
+    const dropdown = document.getElementById('item-menu-dropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
 }
 
 function toggleCollapsible(header) {
@@ -1398,6 +1485,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdown = document.getElementById('container-dropdown');
         if (dropdown && dropdown.classList.contains('active') && !dropdown.contains(e.target)) {
             dropdown.classList.remove('active');
+        }
+
+        // Close item menu dropdown
+        const menuDropdown = document.getElementById('item-menu-dropdown');
+        if (menuDropdown && menuDropdown.classList.contains('active') && !menuDropdown.contains(e.target) && !e.target.closest('.menu-toggle')) {
+            menuDropdown.classList.remove('active');
+        }
+
+        // Close category/color dropdowns
+        if (!e.target.closest('.category-select')) {
+            document.querySelectorAll('.category-dropdown').forEach(d => d.classList.remove('active'));
+        }
+        if (!e.target.closest('.color-select')) {
+            document.querySelectorAll('.color-dropdown').forEach(d => d.classList.remove('active'));
         }
     });
 
