@@ -268,7 +268,7 @@
         <div class="bottom-sheet-header">
             <button class="bottom-sheet-close" onclick="closeAddItem()">✕</button>
             <div class="bottom-sheet-title">Добавить вещь</div>
-            <button class="bottom-sheet-save" onclick="saveItem()"><span class="btn-text">Сохранить</span></button>
+            <div></div>
         </div>
         <div class="bottom-sheet-body">
             <div class="camera-area-sheet" onclick="document.getElementById('photoInput').click()">
@@ -304,6 +304,7 @@
                     <div class="category-dropdown" id="category-dropdown"></div>
                 </div>
             </div>
+            <button class="btn-save" onclick="saveItem()">Сохранить</button>
         </div>
     </div>
 
@@ -568,11 +569,6 @@
     <!-- Container Picker Dropdown -->
     <div class="container-select-dropdown" id="container-dropdown">
         <div class="container-select-list" id="container-list"></div>
-    </div>
-
-    <!-- Bottom Sheet Footer (Save Button) -->
-    <div class="bottom-sheet-footer" id="add-item-footer">
-        <button class="btn-save" onclick="saveItem()">Сохранить</button>
     </div>
 
     <script src="js/api.js"></script>
