@@ -105,6 +105,42 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
+// Batch create items
+router.post('/batch', auth, async (req, res) => {
+  const { items, container_id } = req.body;
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Items array required' });
+  }
+  if (items.length > 50) {
+    return res.status(400).json({ error: 'Max 50 items per batch' });
+  }
+
+  const results = [];
+  const errors = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const { name, color, category } = items[i];
+    const cid = items[i].container_id || container_id;
+
+    if (!name || !name.trim()) {
+      errors.push({ index: i, error: 'Name required' });
+      continue;
+    }
+
+    try {
+      const result = await pool.query(
+        'INSERT INTO items (user_id, name, container_id, color, category) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [req.userId, name.trim(), cid || null, color || null, category || null]
+      );
+      results.push(result.rows[0]);
+    } catch (err) {
+      errors.push({ index: i, error: err.message });
+    }
+  }
+
+  res.json({ data: results, errors });
+});
+
 // Delete item
 router.delete('/:id', auth, async (req, res) => {
   try {

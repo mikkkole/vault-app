@@ -144,6 +144,29 @@ class VaultAPI {
         });
     }
 
+    async createItemsBatch(items, containerId) {
+        const data = await this.request('items/batch', {
+            method: 'POST',
+            body: JSON.stringify({ items, container_id: containerId })
+        });
+        return data;
+    }
+
+    async uploadPhotosBatch(itemIds, files) {
+        const formData = new FormData();
+        formData.append('item_ids', JSON.stringify(itemIds));
+        files.forEach(file => formData.append('photos', file));
+
+        const res = await fetch(API_BASE + 'photos/batch', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${this.token}` },
+            body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        return data;
+    }
+
     async search(query) {
         const data = await this.request(`search?q=${encodeURIComponent(query)}`);
         return data.data;

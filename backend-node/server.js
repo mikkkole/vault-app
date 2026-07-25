@@ -12,12 +12,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Rate limiting: 100 requests per hour per IP
+// Rate limiting: 100 requests per hour per IP, 300 for authenticated users
 app.use('/api/', rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 100,
+  max: (req) => req.user ? 300 : 100,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req.ip,
   message: { error: 'Too many requests, try again later' }
 }));
 

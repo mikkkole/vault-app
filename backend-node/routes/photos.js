@@ -85,6 +85,65 @@ router.post('/', auth, upload.single('photo'), async (req, res) => {
   }
 });
 
+// Batch upload photos
+router.post('/batch', auth, upload.array('photos', 50), async (req, res) => {
+  try {
+    const itemIds = req.body.item_ids;
+    const files = req.files;
+
+    if (!itemIds || !files || itemIds.length !== files.length) {
+      return res.status(400).json({ error: 'Item IDs and photos must match' });
+    }
+
+    // Parse item_ids from string or array
+    const ids = typeof itemIds === 'string' ? JSON.parse(itemIds) : itemIds;
+
+    const results = [];
+    const errors = [];
+
+    const uploads = files.map((file, i) => {
+      return new Promise((resolve) => {
+        const b64 = file.buffer.toString('base64');
+        const dataURI = `data:${file.mimetype};base64,${b64}`;
+
+        cloudinary.uploader.upload(dataURI, {
+          folder: 'vault',
+          transformation: [{ width: 800, height: 800, crop: 'limit' }]
+        }, async (error, result) => {
+          if (error) {
+            errors.push({ index: i, error: error.message });
+            resolve();
+            return;
+          }
+
+          try {
+            const existingImages = await pool.query(
+              'SELECT COUNT(*) FROM item_images WHERE item_id = $1',
+              [ids[i]]
+            );
+            const isPrimary = parseInt(existingImages.rows[0].count) === 0;
+
+            await pool.query(
+              'INSERT INTO item_images (item_id, image_path, is_primary) VALUES ($1, $2, $3)',
+              [ids[i], result.secure_url, isPrimary]
+            );
+            results.push({ item_id: ids[i], image_path: result.secure_url });
+          } catch (err) {
+            errors.push({ index: i, error: err.message });
+          }
+          resolve();
+        });
+      });
+    });
+
+    await Promise.all(uploads);
+    res.json({ data: results, errors });
+  } catch (error) {
+    console.error('Batch upload error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Delete photo
 router.delete('/', auth, async (req, res) => {
   try {
