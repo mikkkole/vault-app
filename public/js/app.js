@@ -547,12 +547,27 @@ async function saveItem() {
     const btn = document.querySelector('#add-item-sheet .bottom-sheet-save');
     setBtnLoading(btn, true);
 
+    const tempItem = {
+        id: -Date.now(),
+        name,
+        container_id: document.getElementById('item-container').value || null,
+        color: document.getElementById('item-color').value.trim() || null,
+        category: document.getElementById('item-category').value.trim() || null,
+        images: [],
+        created_at: new Date().toISOString()
+    };
+
+    // Optimistic: add immediately
+    allItems.unshift(tempItem);
+    renderHome();
+    closeAddItem();
+
     try {
         const item = await api.createItem({
             name: name,
-            container_id: document.getElementById('item-container').value || null,
-            color: document.getElementById('item-color').value.trim() || null,
-            category: document.getElementById('item-category').value.trim() || null
+            container_id: tempItem.container_id,
+            color: tempItem.color,
+            category: tempItem.category
         });
 
         const photoInput = document.getElementById('photoInput');
@@ -560,11 +575,17 @@ async function saveItem() {
             await api.uploadPhoto(item.id, photoInput.files[0]);
         }
 
-        closeAddItem();
+        // Replace temp with real item
+        const idx = allItems.findIndex(i => i.id === tempItem.id);
+        if (idx !== -1) allItems[idx] = { ...item, images: [] };
+
         showSnackbar('Вещь добавлена!');
-        cache.remove('items');
-        loadHome();
+        cache.set('items', allItems);
+        renderHome();
     } catch (err) {
+        // Rollback
+        allItems = allItems.filter(i => i.id !== tempItem.id);
+        renderHome();
         showSnackbar('Ошибка: ' + err.message);
     } finally {
         setBtnLoading(btn, false);
@@ -597,11 +618,25 @@ async function saveContainer() {
     const btn = document.querySelector('#add-container-sheet .bottom-sheet-save');
     setBtnLoading(btn, true);
 
+    const tempContainer = {
+        id: -Date.now(),
+        name,
+        type: document.getElementById('container-type').value,
+        parent_id: document.getElementById('container-parent').value || null,
+        photo: null,
+        children: []
+    };
+
+    // Optimistic: add immediately
+    allContainers.push(tempContainer);
+    closeAddContainer();
+    renderHome();
+
     try {
         const container = await api.createContainer(
             name,
-            document.getElementById('container-type').value,
-            document.getElementById('container-parent').value || null
+            tempContainer.type,
+            tempContainer.parent_id
         );
 
         const photoInput = document.getElementById('containerPhotoInput');
@@ -609,11 +644,17 @@ async function saveContainer() {
             await api.uploadContainerPhoto(container.id, photoInput.files[0]);
         }
 
-        closeAddContainer();
+        // Replace temp with real
+        const idx = allContainers.findIndex(c => c.id === tempContainer.id);
+        if (idx !== -1) allContainers[idx] = { ...container, children: [] };
+
         showSnackbar('Место добавлено!');
-        cache.remove('containers');
-        loadHome();
+        cache.set('containers', allContainers);
+        renderHome();
     } catch (err) {
+        // Rollback
+        allContainers = allContainers.filter(c => c.id !== tempContainer.id);
+        renderHome();
         showSnackbar('Ошибка: ' + err.message);
     } finally {
         setBtnLoading(btn, false);
@@ -867,14 +908,27 @@ async function confirmDelete() {
     const btn = document.querySelector('.detail-confirm-btn.confirm');
     setBtnLoading(btn, true);
 
+    const deletedItem = { ...currentItem };
+    const deletedIndex = allItems.findIndex(i => i.id === currentItem.id);
+
+    // Optimistic: remove immediately
+    allItems = allItems.filter(i => i.id !== currentItem.id);
+    closeConfirmDelete();
+    closeItemDetail();
+    renderHome();
+
     try {
-        await api.deleteItem(currentItem.id);
-        closeConfirmDelete();
-        closeItemDetail();
+        await api.deleteItem(deletedItem.id);
         showSnackbar('Вещь удалена');
-        cache.remove('items');
-        loadHome();
+        cache.set('items', allItems);
     } catch (err) {
+        // Rollback
+        if (deletedIndex !== -1) {
+            allItems.splice(deletedIndex, 0, deletedItem);
+        } else {
+            allItems.push(deletedItem);
+        }
+        renderHome();
         showSnackbar('Ошибка: ' + err.message);
     } finally {
         setBtnLoading(btn, false);
@@ -897,6 +951,11 @@ function toggleNotifications() {
         status.textContent = 'Отключены';
         showSnackbar('Уведомления отключены');
     }
+}
+
+function togglePasswordVisibility() {
+    const input = document.getElementById('auth-password');
+    input.type = input.type === 'password' ? 'text' : 'password';
 }
 
 // Snackbar

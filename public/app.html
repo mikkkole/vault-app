@@ -47,7 +47,10 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Пароль</label>
-                    <input type="password" id="auth-password" class="form-input" placeholder="Минимум 6 символов">
+                    <div style="position:relative;">
+                        <input type="password" id="auth-password" class="form-input" placeholder="Минимум 6 символов" style="padding-right:40px;">
+                        <button type="button" onclick="togglePasswordVisibility()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:18px;cursor:pointer;padding:4px;color:var(--text-secondary);">👁️</button>
+                    </div>
                 </div>
                 <div class="form-group" id="auth-name-group" style="display:none;">
                     <label class="form-label">Имя</label>
