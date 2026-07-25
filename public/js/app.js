@@ -843,8 +843,9 @@ function toggleCollapsible(header) {
 
 function editCurrentItem() {
     if (!currentItem) return;
+    const item = currentItem;
     closeItemDetail();
-    openEditItem(currentItem);
+    openEditItem(item);
 }
 
 async function openEditItem(item) {
