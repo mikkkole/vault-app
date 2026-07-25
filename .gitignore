@@ -24,6 +24,9 @@ ai-clone/
 business-*/
 mastery/
 plans/
+.gitignore
+CLAUDE.md
+retrospectives/
 retrospectives/
 specs/
 thoughts/
