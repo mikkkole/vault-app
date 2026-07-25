@@ -249,23 +249,16 @@ app.use('/api/', rateLimit({ windowMs: 60 * 60 * 1000, max: 100 }));
 
 ---
 
-## Фаза 8: Self-ping (anti-sleep) [ ]
+## Фаза 8: Self-ping (anti-sleep) [x]
 
 **Цель:** Render free tier не засыпает. Пинг каждые 10 минут.
 
 | # | Задача | Статус |
 |---|--------|--------|
 | 8.1 | Health endpoint `/api/health` отвечает быстро | [x] |
-| 8.2 | UptimeRobot: добавить мониторинг `https://vault-app-8vjd.onrender.com/api/health` (Ping Interval: 10 min) | [ ] |
+| 8.2 | GitHub Actions cron: `.github/workflows/keep-alive.yml` - пинг каждые 10 мин | [x] |
 
 **Критерий done:** Приложение не засыпает, первый запрос не 30-60 секунд.
-
-**Как настроить UptimeRobot (бесплатно):**
-1. Зарегистрироваться на uptimerobot.com
-2. Add New Monitor → HTTP(s)
-3. URL: `https://vault-app-8vjd.onrender.com/api/health`
-4. Monitoring Interval: 10 minutes
-5. Free plan: 50 мониторов, достаточно
 
 ---
 
