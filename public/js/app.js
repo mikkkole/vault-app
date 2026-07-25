@@ -242,6 +242,7 @@ async function loadSearch() {
     // Use cached data if available
     if (allItems.length > 0) {
         renderSearchItems(allItems);
+        renderFilterTags();
     }
 
     try {
@@ -249,9 +250,24 @@ async function loadSearch() {
         allItems = items;
         cache.set('items', items);
         renderSearchItems(items);
+        renderFilterTags();
     } catch (err) {
         console.error('Load search error:', err);
     }
+}
+
+function renderFilterTags() {
+    // Categories
+    const categories = [...new Set(allItems.map(i => i.category).filter(Boolean))].sort();
+    const catContainer = document.getElementById('filter-categories');
+    catContainer.innerHTML = '<span class="tag active" onclick="toggleCategory(this)">Все</span>' +
+        categories.map(c => `<span class="tag" onclick="toggleCategory(this)">${escapeHtml(c)}</span>`).join('');
+
+    // Locations
+    const locations = [...new Set(allItems.map(i => i.container_name).filter(Boolean))].sort();
+    const locContainer = document.getElementById('filter-locations');
+    locContainer.innerHTML = '<span class="tag active" onclick="toggleLocation(this)">Все места</span>' +
+        locations.map(l => `<span class="tag" onclick="toggleLocation(this)">${escapeHtml(l)}</span>`).join('');
 }
 
 function renderSearchItems(items) {
@@ -290,49 +306,53 @@ function renderSearchItems(items) {
 }
 
 let searchTimeout;
-function onSearchInput(input) {
-    clearTimeout(searchTimeout);
-    const query = input.value.trim().toLowerCase();
-    
-    if (!query) {
-        renderSearchItems(allItems);
-        return;
-    }
+let activeCategory = 'Все';
+let activeLocation = 'Все места';
 
-    searchTimeout = setTimeout(() => {
-        const filtered = allItems.filter(item =>
+function applyFilters() {
+    const query = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+
+    let filtered = allItems;
+
+    // Text search
+    if (query) {
+        filtered = filtered.filter(item =>
             item.name.toLowerCase().includes(query) ||
             (item.category && item.category.toLowerCase().includes(query)) ||
             (item.container_name && item.container_name.toLowerCase().includes(query))
         );
-        renderSearchItems(filtered);
-    }, 300);
+    }
+
+    // Category filter
+    if (activeCategory !== 'Все') {
+        filtered = filtered.filter(i => i.category === activeCategory);
+    }
+
+    // Location filter
+    if (activeLocation !== 'Все места') {
+        filtered = filtered.filter(i => i.container_name === activeLocation);
+    }
+
+    renderSearchItems(filtered);
+}
+
+function onSearchInput(input) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(applyFilters, 300);
 }
 
 function toggleCategory(el) {
     document.querySelectorAll('#filter-categories .tag').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    
-    const category = el.textContent.trim();
-    if (category === 'Все') {
-        renderSearchItems(allItems);
-    } else {
-        const clean = category.replace(/^[^\w]+/, '').trim();
-        renderSearchItems(allItems.filter(i => i.category && i.category.includes(clean)));
-    }
+    activeCategory = el.textContent.trim();
+    applyFilters();
 }
 
 function toggleLocation(el) {
     document.querySelectorAll('#filter-locations .tag').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    
-    const location = el.textContent.trim();
-    if (location.includes('Все')) {
-        renderSearchItems(allItems);
-    } else {
-        const clean = location.replace(/^[^\w]+/, '').trim();
-        renderSearchItems(allItems.filter(i => i.container_name && i.container_name.includes(clean)));
-    }
+    activeLocation = el.textContent.trim();
+    applyFilters();
 }
 
 // Storage
