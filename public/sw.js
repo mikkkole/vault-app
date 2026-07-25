@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vault-v5';
+const CACHE_NAME = 'vault-v6';
 const STATIC_ASSETS = [
     '/',
     '/app.html',
