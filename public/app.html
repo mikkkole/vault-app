@@ -457,7 +457,8 @@
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
     <script>
-        if ('serviceWorker' in navigator) {
+        // Skip Service Worker in Capacitor (causes fetch failures)
+        if (!window.Capacitor && 'serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').catch(() => {});
         }
     </script>
