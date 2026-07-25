@@ -65,6 +65,14 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
+// Error reporting endpoint
+app.post('/api/errors', (req, res) => {
+  const { message, stack, url, line, column } = req.body;
+  console.error(`[CLIENT ERROR] ${new Date().toISOString()} | ${url || 'unknown'} | ${message}`);
+  if (stack) console.error(stack);
+  res.json({ ok: true });
+});
+
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   await initDatabase();

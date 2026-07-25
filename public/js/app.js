@@ -5,6 +5,22 @@ let allContainers = [];
 let currentItem = null;
 let isRegisterMode = false;
 
+// Error monitoring
+window.onerror = function(msg, url, line, col, err) {
+    fetch('/api/errors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, url, line, column: col, stack: err?.stack })
+    }).catch(() => {});
+};
+window.addEventListener('unhandledrejection', function(e) {
+    fetch('/api/errors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: e.reason?.message || String(e.reason), stack: e.reason?.stack })
+    }).catch(() => {});
+});
+
 // ===== Loading State Helpers =====
 function setBtnLoading(btn, loading) {
     if (!btn) return;
