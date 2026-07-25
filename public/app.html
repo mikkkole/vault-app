@@ -127,8 +127,12 @@
             </button>
             <div class="fab-popup" id="fab-popup">
                 <button class="fab-popup-item" onclick="showAddItem(); closeFabPopup();">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M20.38 3.46L16 2 12 5.5 8 2l-4.38 1.46a2 2 0 00-1.34 1.86v14.36A2 2 0 004.62 21.54L8 20l4 3.5 4-3.5 4.38 1.46a2 2 0 002.34-1.86V5.32a2 2 0 00-1.34-1.86z"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     Добавить вещь
+                </button>
+                <button class="fab-popup-item" onclick="openMassAdd(); closeFabPopup();">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    Массовое добавление
                 </button>
                 <button class="fab-popup-item" onclick="showAddContainer(); closeFabPopup();">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
@@ -452,6 +456,102 @@
     <!-- Snackbar -->
     <div class="snackbar" id="snackbar">
         <span id="snackbar-text"></span>
+    </div>
+
+    <!-- Mass Add Screen -->
+    <div class="mass-add-screen" id="mass-add-screen">
+        <div class="mass-add-header">
+            <button class="mass-add-close" onclick="closeMassAdd()">&#10005;</button>
+            <span class="mass-add-title">Быстрое добавление</span>
+            <span class="mass-add-counter" id="mass-add-counter">0</span>
+        </div>
+        <div class="mass-add-location" id="mass-add-location">
+            <span class="mass-add-location-icon">&#128205;</span>
+            <div class="mass-add-location-text">
+                <div class="mass-add-location-label">Добавить в</div>
+                <div class="mass-add-location-name" id="mass-add-location-name">Не выбрано</div>
+            </div>
+            <span class="mass-add-location-change" onclick="changeMassAddLocation()">Изменить</span>
+        </div>
+        <div class="mass-add-viewfinder">
+            <div class="mass-add-frame" id="mass-add-frame">
+                <div class="mass-add-frame-icon">&#128247;</div>
+                <div class="mass-add-frame-text">Наведите на вещь</div>
+            </div>
+            <button class="mass-add-capture-btn" id="mass-add-capture" onclick="capturePhoto()">
+                <div class="mass-add-capture-inner"></div>
+            </button>
+            <div class="mass-add-flash" id="mass-add-flash"></div>
+        </div>
+        <div class="mass-add-bottom">
+            <div class="mass-add-gallery-wrap">
+                <div class="mass-add-gallery" id="mass-add-gallery"></div>
+                <div class="mass-add-gallery-badge" id="mass-add-gallery-badge">0</div>
+            </div>
+            <button class="mass-add-done" id="mass-add-done" onclick="openLabelReview()" disabled>
+                Подписать вещи (0)
+            </button>
+        </div>
+    </div>
+
+    <!-- Label Review Screen -->
+    <div class="label-review" id="label-review">
+        <div class="label-review-header">
+            <span class="label-review-title">Подпишите вещи</span>
+            <button class="label-review-save" onclick="saveAllItems()">&#10003;</button>
+        </div>
+        <div class="label-review-progress">
+            <div class="label-review-progress-bar">
+                <div class="label-review-progress-fill" id="label-progress-fill"></div>
+            </div>
+            <span class="label-review-progress-text" id="label-progress-text">0/0</span>
+        </div>
+        <div class="label-review-dots" id="label-review-dots"></div>
+        <div class="label-review-body">
+            <div class="label-card" id="label-card">
+                <div class="label-card-photo" id="label-card-photo"></div>
+                <div class="label-card-form">
+                    <input class="label-card-input" id="label-card-input" placeholder="Название вещи">
+                    <div class="label-card-hint">
+                        <span>Нажмите Enter для следующей</span>
+                        <button class="label-card-skip" onclick="skipCurrentItem()">Пропустить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="label-review-bottom-bar">
+            <button class="label-bottom-btn skip" onclick="skipAllUnlabeled()">Пропустить невписанные</button>
+            <button class="label-bottom-btn primary" onclick="saveAllItems()">Сохранить все</button>
+        </div>
+    </div>
+
+    <!-- Mass Add Close Confirm Dialog -->
+    <div class="mass-add-close-confirm-overlay" id="mass-add-close-overlay">
+        <div class="mass-add-close-dialog">
+            <h3>Удалить фото?</h3>
+            <p>Вы сможете сохранить черновик и вернуться позже</p>
+            <div class="mass-add-close-actions">
+                <button class="mass-add-close-btn mass-add-close-cancel" onclick="closeMassAddDialog()">
+                    Продолжить съёмку
+                </button>
+                <button class="mass-add-close-btn mass-add-close-draft" onclick="saveDraftMassAdd()">
+                    Черновик
+                </button>
+                <button class="mass-add-close-btn mass-add-close-discard" onclick="discardMassAdd()">
+                    Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Picker Dropdown -->
+    <div class="container-select-dropdown" id="container-dropdown">
+        <div class="container-select-list" id="container-list"></div>
+    </div>
+
+    <!-- Bottom Sheet Footer (Save Button) -->
+    <div class="bottom-sheet-footer" id="add-item-footer">
+        <button class="btn-save" onclick="saveItem()">Сохранить</button>
     </div>
 
     <script src="js/api.js"></script>

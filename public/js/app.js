@@ -5,6 +5,45 @@ let allContainers = [];
 let currentItem = null;
 let isRegisterMode = false;
 
+// ===== Mass Add State =====
+const massAddState = {
+    photos: [],
+    selectedContainerId: null,
+    currentPhase: 'camera',
+    maxQueueSize: 50,
+
+    addPhoto(blob) {
+        if (this.photos.length >= this.maxQueueSize) {
+            throw new Error(`Максимум ${this.maxQueueSize} фото за сессию`);
+        }
+        const photo = {
+            id: Date.now() + Math.random(),
+            blob,
+            url: URL.createObjectURL(blob),
+            name: '',
+            containerId: this.selectedContainerId,
+            status: 'pending'
+        };
+        this.photos.push(photo);
+        return photo;
+    },
+
+    removePhoto(id) {
+        const index = this.photos.findIndex(p => p.id === id);
+        if (index !== -1) {
+            URL.revokeObjectURL(this.photos[index].url);
+            this.photos.splice(index, 1);
+        }
+    },
+
+    clear() {
+        this.photos.forEach(p => URL.revokeObjectURL(p.url));
+        this.photos = [];
+        this.selectedContainerId = null;
+        this.currentPhase = 'camera';
+    }
+};
+
 // Error monitoring
 window.onerror = function(msg, url, line, col, err) {
     fetch('/api/errors', {
@@ -545,6 +584,322 @@ function closeFabPopup() {
     document.getElementById('fab-popup').classList.remove('active');
 }
 
+// ===== Mass Add Functions =====
+function openMassAdd() {
+    const lastContainer = localStorage.getItem('last-container-id');
+    if (lastContainer) {
+        massAddState.selectedContainerId = parseInt(lastContainer);
+        const container = allContainers.find(c => c.id === massAddState.selectedContainerId);
+        document.getElementById('mass-add-location-name').textContent = container ? container.name : 'Не выбрано';
+    }
+    massAddState.currentPhase = 'camera';
+    document.getElementById('mass-add-screen').classList.add('active');
+    updateGallery();
+}
+
+function closeMassAdd() {
+    if (massAddState.photos.length > 0) {
+        document.getElementById('mass-add-close-overlay').classList.add('active');
+    } else {
+        document.getElementById('mass-add-screen').classList.remove('active');
+        massAddState.clear();
+    }
+}
+
+function closeMassAddDialog() {
+    document.getElementById('mass-add-close-overlay').classList.remove('active');
+}
+
+function discardMassAdd() {
+    massAddState.clear();
+    document.getElementById('mass-add-screen').classList.remove('active');
+    document.getElementById('mass-add-close-overlay').classList.remove('active');
+    updateGallery();
+}
+
+function saveDraftMassAdd() {
+    const draft = massAddState.photos.map(p => ({
+        name: p.name,
+        containerId: p.containerId
+    }));
+    localStorage.setItem('mass-add-draft', JSON.stringify(draft));
+    massAddState.clear();
+    document.getElementById('mass-add-screen').classList.remove('active');
+    document.getElementById('mass-add-close-overlay').classList.remove('active');
+    showSnackbar('Черновик сохранён (без фото)');
+}
+
+function changeMassAddLocation() {
+    showContainerPicker((containerId) => {
+        massAddState.selectedContainerId = containerId;
+        const container = allContainers.find(c => c.id === containerId);
+        document.getElementById('mass-add-location-name').textContent = container ? container.name : 'Не выбрано';
+        localStorage.setItem('last-container-id', containerId);
+    });
+}
+
+function showContainerPicker(callback) {
+    const containers = cache.get('containers') || allContainers;
+    const dropdown = document.getElementById('container-dropdown');
+    if (!dropdown) return;
+
+    const list = document.getElementById('container-list');
+    list.innerHTML = containers.map(c =>
+        `<div class="category-option" onclick="selectContainerForMassAdd(${c.id})">${escapeHtml(c.name)}</div>`
+    ).join('');
+
+    window._massAddContainerCallback = callback;
+    dropdown.classList.add('active');
+}
+
+function selectContainerForMassAdd(id) {
+    if (window._massAddContainerCallback) {
+        window._massAddContainerCallback(id);
+    }
+    const dropdown = document.getElementById('container-dropdown');
+    if (dropdown) dropdown.classList.remove('active');
+}
+
+function compressImage(blob, maxWidth = 800) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob(resolve, 'image/jpeg', 0.85);
+        };
+        img.src = URL.createObjectURL(blob);
+    });
+}
+
+async function capturePhoto() {
+    try {
+        let blob;
+
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera) {
+            const { Camera, CameraResultType, CameraSource } = window.Capacitor.Plugins;
+            const image = await Camera.getPhoto({
+                quality: 90,
+                allowEditing: false,
+                resultType: CameraResultType.Blob,
+                source: CameraSource.Camera,
+                width: 1024,
+                height: 1024,
+            });
+            blob = image.blob;
+        } else {
+            // Fallback: use file input
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+
+            blob = await new Promise((resolve, reject) => {
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) resolve(file);
+                    else reject(new Error('User cancelled'));
+                };
+                input.click();
+            });
+        }
+
+        const compressedBlob = await compressImage(blob, 800);
+
+        // Validate size (5MB max)
+        if (compressedBlob.size > 5 * 1024 * 1024) {
+            showSnackbar('Фото слишком большое (макс. 5MB)');
+            return;
+        }
+
+        showFlash();
+        massAddState.addPhoto(compressedBlob);
+        updateGallery();
+
+    } catch (error) {
+        if (error.message !== 'User cancelled' && error.message !== 'User cancelled photos app') {
+            console.error('Camera error:', error);
+            showSnackbar('Ошибка камеры');
+        }
+    }
+}
+
+function showFlash() {
+    const flash = document.getElementById('mass-add-flash');
+    flash.classList.add('active');
+    setTimeout(() => flash.classList.remove('active'), 300);
+}
+
+function updateGallery() {
+    const gallery = document.getElementById('mass-add-gallery');
+    gallery.innerHTML = massAddState.photos.map((photo, i) => `
+        <div class="mass-add-thumb ${photo.name ? 'labeled' : 'unlabeled'}"
+             onclick="editItem(${i})">
+            <div class="mass-add-thumb-num">${i + 1}</div>
+            <img src="${photo.url}"
+                 style="width:100%;height:100%;object-fit:cover">
+        </div>
+    `).join('');
+
+    const badge = document.getElementById('mass-add-gallery-badge');
+    badge.textContent = massAddState.photos.length;
+    badge.classList.toggle('visible', massAddState.photos.length > 0);
+
+    const counter = document.getElementById('mass-add-counter');
+    counter.textContent = massAddState.photos.length;
+
+    const doneBtn = document.getElementById('mass-add-done');
+    doneBtn.disabled = massAddState.photos.length === 0;
+    doneBtn.textContent = `Подписать вещи (${massAddState.photos.length})`;
+}
+
+// ===== Label Review =====
+let currentLabelIndex = 0;
+
+function openLabelReview() {
+    if (massAddState.photos.length === 0) return;
+    currentLabelIndex = 0;
+    massAddState.currentPhase = 'labeling';
+
+    document.getElementById('mass-add-screen').classList.remove('active');
+    document.getElementById('label-review').classList.add('active');
+
+    renderLabelCard();
+    updateLabelProgress();
+}
+
+function renderLabelCard() {
+    if (currentLabelIndex >= massAddState.photos.length) {
+        saveAllItems();
+        return;
+    }
+
+    const photo = massAddState.photos[currentLabelIndex];
+    const photoEl = document.getElementById('label-card-photo');
+    const input = document.getElementById('label-card-input');
+
+    photoEl.style.backgroundImage = `url(${photo.url})`;
+    input.value = photo.name || '';
+    input.focus();
+
+    updateLabelDots();
+}
+
+function skipCurrentItem() {
+    currentLabelIndex++;
+    renderLabelCard();
+    updateLabelProgress();
+}
+
+function acceptCurrentLabel() {
+    const input = document.getElementById('label-card-input');
+    massAddState.photos[currentLabelIndex].name = input.value.trim() || 'Без названия';
+    currentLabelIndex++;
+    renderLabelCard();
+    updateLabelProgress();
+}
+
+function skipAllUnlabeled() {
+    massAddState.photos.forEach(p => {
+        if (!p.name) p.name = 'Без названия';
+    });
+    saveAllItems();
+}
+
+function updateLabelProgress() {
+    const total = massAddState.photos.length;
+    const labeled = massAddState.photos.filter(p => p.name).length;
+    document.getElementById('label-progress-fill').style.width = `${(labeled / total) * 100}%`;
+    document.getElementById('label-progress-text').textContent = `${labeled}/${total}`;
+}
+
+function updateLabelDots() {
+    const dots = document.getElementById('label-review-dots');
+    dots.innerHTML = massAddState.photos.map((photo, i) =>
+        `<div class="label-review-dot ${i === currentLabelIndex ? 'active' : ''} ${photo.name ? 'labeled' : ''}"></div>`
+    ).join('');
+}
+
+async function saveAllItems() {
+    const saveBtn = document.querySelector('.label-review-save');
+    saveBtn.disabled = true;
+
+    massAddState.currentPhase = 'saving';
+
+    // Save names for current item if in labeling phase
+    if (massAddState.currentPhase === 'labeling' && currentLabelIndex < massAddState.photos.length) {
+        const input = document.getElementById('label-card-input');
+        if (input && input.value.trim()) {
+            massAddState.photos[currentLabelIndex].name = input.value.trim();
+        }
+    }
+
+    const itemsData = massAddState.photos.map(photo => ({
+        name: photo.name || 'Без названия',
+        container_id: massAddState.selectedContainerId,
+    }));
+
+    try {
+        // 1. Create items via batch endpoint
+        const itemsResponse = await api.createItemsBatch(itemsData, massAddState.selectedContainerId);
+
+        if (!itemsResponse.data || itemsResponse.data.length === 0) {
+            showSnackbar('Ошибка: вещи не созданы');
+            saveBtn.disabled = false;
+            return;
+        }
+
+        // 2. Upload photos
+        const files = massAddState.photos.map(p => p.blob);
+        const itemIds = itemsResponse.data.map(item => item.id);
+
+        // Upload in batches of 10
+        const batchSize = 10;
+        for (let i = 0; i < itemIds.length; i += batchSize) {
+            const batchIds = itemIds.slice(i, i + batchSize);
+            const batchFiles = files.slice(i, i + batchSize);
+            await api.uploadPhotosBatch(batchIds, batchFiles);
+        }
+
+        const uploaded = itemsResponse.data.length;
+        const errors = itemsResponse.errors ? itemsResponse.errors.length : 0;
+
+        if (errors > 0) {
+            showSnackbar(`Добавлено ${uploaded}, ошибок: ${errors}`);
+        } else {
+            showSnackbar(`Добавлено ${uploaded} вещей`);
+        }
+
+        // 3. Clear and close
+        massAddState.clear();
+        document.getElementById('label-review').classList.remove('active');
+        document.getElementById('mass-add-screen').classList.remove('active');
+
+        // 4. Refresh UI
+        cache.remove('items');
+        loadHome();
+
+    } catch (err) {
+        console.error('Save all items error:', err);
+        showSnackbar('Ошибка сохранения: ' + err.message);
+    } finally {
+        saveBtn.disabled = false;
+    }
+}
+
 // Add Item
 function showAddItem() {
     document.getElementById('add-item-overlay').classList.add('active');
@@ -1038,5 +1393,38 @@ document.addEventListener('DOMContentLoaded', function() {
         if (popup && popup.classList.contains('active') && !popup.contains(e.target) && !fab.contains(e.target)) {
             popup.classList.remove('active');
         }
+
+        // Close container dropdown
+        const dropdown = document.getElementById('container-dropdown');
+        if (dropdown && dropdown.classList.contains('active') && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('active');
+        }
     });
+
+    // Keyboard handler for label input
+    const labelInput = document.getElementById('label-card-input');
+    if (labelInput) {
+        labelInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                acceptCurrentLabel();
+            }
+        });
+    }
+
+    // Keyboard height handler for save button
+    handleKeyboard();
 });
+
+// Keyboard height handler
+function handleKeyboard() {
+    const visualViewport = window.visualViewport;
+    if (visualViewport) {
+        visualViewport.addEventListener('resize', () => {
+            const footer = document.querySelector('.bottom-sheet-footer');
+            if (footer && footer.style.display !== 'none') {
+                footer.style.bottom = `${window.innerHeight - visualViewport.height}px`;
+            }
+        });
+    }
+}
