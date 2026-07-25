@@ -53,7 +53,7 @@
                     <label class="form-label">Имя</label>
                     <input type="text" id="auth-name" class="form-input" placeholder="Ваше имя">
                 </div>
-                <button class="greeting-cta" style="width:100%;margin-top:16px;" onclick="handleAuth()">Войти</button>
+                <button class="greeting-cta" style="width:100%;margin-top:16px;" onclick="handleAuth()"><span class="btn-text">Войти</span></button>
                 <p style="text-align:center;margin-top:16px;color:var(--text-secondary);font-size:14px;">
                     <span id="auth-toggle" onclick="toggleAuthMode()" style="color:var(--primary);cursor:pointer;font-weight:600;">Создать аккаунт</span>
                 </p>
@@ -269,7 +269,7 @@
         <div class="bottom-sheet-header">
             <button class="bottom-sheet-close" onclick="closeAddItem()">✕</button>
             <div class="bottom-sheet-title">Добавить вещь</div>
-            <button class="bottom-sheet-save" onclick="saveItem()">Сохранить</button>
+            <button class="bottom-sheet-save" onclick="saveItem()"><span class="btn-text">Сохранить</span></button>
         </div>
         <div class="bottom-sheet-body">
             <div class="camera-area-sheet" onclick="document.getElementById('photoInput').click()">
@@ -307,9 +307,14 @@
         <div class="bottom-sheet-header">
             <button class="bottom-sheet-close" onclick="closeAddContainer()">✕</button>
             <div class="bottom-sheet-title">Добавить место</div>
-            <button class="bottom-sheet-save" onclick="saveContainer()">Сохранить</button>
+            <button class="bottom-sheet-save" onclick="saveContainer()"><span class="btn-text">Сохранить</span></button>
         </div>
         <div class="bottom-sheet-body">
+            <div class="edit-photo-area" onclick="document.getElementById('containerPhotoInput').click()">
+                <img id="container-photo-preview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:12px;">
+                <div class="camera-icon" id="container-photo-placeholder">📷</div>
+                <input type="file" id="containerPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleContainerPhotoSelect(this, 'container-photo-preview', 'container-photo-placeholder')">
+            </div>
             <div class="form-group">
                 <label class="form-label">Название</label>
                 <input type="text" id="container-name" class="form-input" placeholder="Шкаф в прихожей">
@@ -328,6 +333,74 @@
                 <label class="form-label">Родительское место (необязательно)</label>
                 <select id="container-parent" class="form-input">
                     <option value="">Нет (корневое)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Item Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="edit-item-overlay" onclick="closeEditItem()"></div>
+    <div class="bottom-sheet" id="edit-item-sheet">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-header">
+            <button class="bottom-sheet-close" onclick="closeEditItem()">✕</button>
+            <div class="bottom-sheet-title">Редактировать вещь</div>
+            <button class="bottom-sheet-save" onclick="saveItemEdit()"><span class="btn-text">Сохранить</span></button>
+        </div>
+        <div class="bottom-sheet-body">
+            <div class="edit-photo-area" id="edit-photo-area" onclick="document.getElementById('editPhotoInput').click()">
+                <img id="edit-photo-preview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:12px;">
+                <div class="camera-icon" id="edit-photo-placeholder">📷</div>
+                <input type="file" id="editPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleEditPhotoSelect(this)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Название</label>
+                <input type="text" id="edit-item-name" class="form-input" placeholder="Название вещи">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Место</label>
+                <select id="edit-item-container" class="form-input">
+                    <option value="">Без места</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Цвет</label>
+                <input type="text" id="edit-item-color" class="form-input" placeholder="Красный">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Категория</label>
+                <input type="text" id="edit-item-category" class="form-input" placeholder="Одежда">
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Container Bottom Sheet -->
+    <div class="bottom-sheet-overlay" id="edit-container-overlay" onclick="closeEditContainer()"></div>
+    <div class="bottom-sheet" id="edit-container-sheet">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-header">
+            <button class="bottom-sheet-close" onclick="closeEditContainer()">✕</button>
+            <div class="bottom-sheet-title">Редактировать место</div>
+            <button class="bottom-sheet-save" onclick="saveContainerEdit()"><span class="btn-text">Сохранить</span></button>
+        </div>
+        <div class="bottom-sheet-body">
+            <div class="edit-photo-area" onclick="document.getElementById('editContainerPhotoInput').click()">
+                <img id="edit-container-photo-preview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:12px;">
+                <div class="camera-icon" id="edit-container-photo-placeholder">📷</div>
+                <input type="file" id="editContainerPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="handleContainerPhotoSelect(this, 'edit-container-photo-preview', 'edit-container-photo-placeholder')">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Название</label>
+                <input type="text" id="edit-container-name" class="form-input" placeholder="Название места">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Тип</label>
+                <select id="edit-container-type" class="form-input">
+                    <option value="room">Комната</option>
+                    <option value="furniture">Мебель</option>
+                    <option value="box">Ящик</option>
+                    <option value="shelf">Полка</option>
+                    <option value="other">Другое</option>
                 </select>
             </div>
         </div>
@@ -371,7 +444,7 @@
             <div class="detail-confirm-text">Это действие нельзя отменить</div>
             <div class="detail-confirm-actions">
                 <button class="detail-confirm-btn cancel" onclick="closeConfirmDelete()">Отмена</button>
-                <button class="detail-confirm-btn confirm danger" onclick="confirmDelete()">Удалить</button>
+                <button class="detail-confirm-btn confirm danger" onclick="confirmDelete()"><span class="btn-text">Удалить</span></button>
             </div>
         </div>
     </div>

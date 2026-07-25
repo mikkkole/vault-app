@@ -44,15 +44,15 @@ function buildTree(items, parentId) {
 // Create container
 router.post('/', auth, async (req, res) => {
   try {
-    const { name, type, description, parent_id } = req.body;
+    const { name, type, description, parent_id, photo } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
     }
 
     const result = await pool.query(
-      'INSERT INTO containers (user_id, name, type, description, parent_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [req.userId, name, type || 'other', description || null, parent_id || null]
+      'INSERT INTO containers (user_id, name, type, description, parent_id, photo) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [req.userId, name, type || 'other', description || null, parent_id || null, photo || null]
     );
 
     res.status(201).json({ data: result.rows[0] });
@@ -65,16 +65,17 @@ router.post('/', auth, async (req, res) => {
 // Update container
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { name, type, description, parent_id } = req.body;
+    const { name, type, description, parent_id, photo } = req.body;
 
     const result = await pool.query(
       `UPDATE containers SET
         name = COALESCE($1, name),
         type = COALESCE($2, type),
         description = $3,
-        parent_id = $4
-       WHERE id = $5 AND user_id = $6 RETURNING *`,
-      [name, type, description, parent_id, req.params.id, req.userId]
+        parent_id = $4,
+        photo = COALESCE($5, photo)
+       WHERE id = $6 AND user_id = $7 RETURNING *`,
+      [name, type, description, parent_id, photo, req.params.id, req.userId]
     );
 
     if (result.rows.length === 0) {

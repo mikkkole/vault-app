@@ -5,6 +5,53 @@ let allContainers = [];
 let currentItem = null;
 let isRegisterMode = false;
 
+// ===== Loading State Helpers =====
+function setBtnLoading(btn, loading) {
+    if (!btn) return;
+    if (loading) {
+        btn.classList.add('btn-loading');
+        btn.disabled = true;
+        if (!btn.querySelector('.btn-spinner')) {
+            const spinner = document.createElement('span');
+            spinner.className = 'btn-spinner';
+            btn.appendChild(spinner);
+        }
+    } else {
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+        const spinner = btn.querySelector('.btn-spinner');
+        if (spinner) spinner.remove();
+    }
+}
+
+function skeletonCards(count) {
+    let html = '';
+    for (let i = 0; i < count; i++) {
+        html += `<div class="skeleton-card">
+            <div class="skeleton skeleton-image"></div>
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line skeleton-line-short"></div>
+        </div>`;
+    }
+    return html;
+}
+
+// ===== Client-side Cache =====
+const cache = {
+    get(key) {
+        try {
+            const raw = localStorage.getItem('vault_' + key);
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+    },
+    set(key, data) {
+        try { localStorage.setItem('vault_' + key, JSON.stringify(data)); } catch {}
+    },
+    remove(key) {
+        localStorage.removeItem('vault_' + key);
+    }
+};
+
 // Onboarding
 function closeOnboarding() {
     const onboarding = document.getElementById('onboarding');
@@ -41,6 +88,7 @@ async function handleAuth() {
     const email = document.getElementById('auth-email').value.trim();
     const password = document.getElementById('auth-password').value;
     const errorEl = document.getElementById('auth-error');
+    const btn = document.querySelector('#auth-screen .greeting-cta');
     errorEl.style.display = 'none';
 
     if (!email || !password) {
@@ -49,6 +97,7 @@ async function handleAuth() {
         return;
     }
 
+    setBtnLoading(btn, true);
     try {
         if (isRegisterMode) {
             const name = document.getElementById('auth-name').value.trim();
@@ -60,6 +109,8 @@ async function handleAuth() {
     } catch (err) {
         errorEl.textContent = err.message;
         errorEl.style.display = 'block';
+    } finally {
+        setBtnLoading(btn, false);
     }
 }
 
@@ -97,6 +148,22 @@ function showScreen(screenId) {
 
 // Home
 async function loadHome() {
+    // Show skeleton while loading
+    const recentGrid = document.getElementById('recent-items');
+    if (recentGrid && recentGrid.children.length === 0) {
+        recentGrid.innerHTML = skeletonCards(6);
+    }
+
+    // Load from cache first, then fetch in background
+    const cachedItems = cache.get('items');
+    const cachedContainers = cache.get('containers');
+
+    if (cachedItems) {
+        allItems = cachedItems;
+        allContainers = cachedContainers || [];
+        renderHome();
+    }
+
     try {
         const [items, containers] = await Promise.all([
             api.getItems(),
@@ -104,28 +171,36 @@ async function loadHome() {
         ]);
         allItems = items;
         allContainers = containers;
-
-        document.getElementById('stat-items').textContent = items.length;
-        document.getElementById('stat-containers').textContent = containers.length;
-
-        const emptyEl = document.getElementById('home-empty');
-        const withItemsEl = document.getElementById('home-with-items');
-
-        if (items.length === 0) {
-            emptyEl.style.display = 'block';
-            withItemsEl.style.display = 'none';
-        } else {
-            emptyEl.style.display = 'none';
-            withItemsEl.style.display = 'block';
-            renderRecentItems(items.slice(0, 6));
-        }
-
-        // Update profile
-        document.getElementById('profile-stats').textContent = `${items.length} вещей, ${containers.length} мест`;
-        document.getElementById('profile-progress').style.width = `${Math.min(items.length * 4, 100)}%`;
+        cache.set('items', items);
+        cache.set('containers', containers);
+        renderHome();
     } catch (err) {
         console.error('Load home error:', err);
+        if (!cachedItems) {
+            recentGrid.innerHTML = '';
+            showSnackbar('Ошибка загрузки данных');
+        }
     }
+}
+
+function renderHome() {
+    document.getElementById('stat-items').textContent = allItems.length;
+    document.getElementById('stat-containers').textContent = allContainers.length;
+
+    const emptyEl = document.getElementById('home-empty');
+    const withItemsEl = document.getElementById('home-with-items');
+
+    if (allItems.length === 0) {
+        emptyEl.style.display = 'block';
+        withItemsEl.style.display = 'none';
+    } else {
+        emptyEl.style.display = 'none';
+        withItemsEl.style.display = 'block';
+        renderRecentItems(allItems.slice(0, 6));
+    }
+
+    document.getElementById('profile-stats').textContent = `${allItems.length} вещей, ${allContainers.length} мест`;
+    document.getElementById('profile-progress').style.width = `${Math.min(allItems.length * 4, 100)}%`;
 }
 
 function renderRecentItems(items) {
@@ -158,9 +233,21 @@ function renderRecentItems(items) {
 
 // Search
 async function loadSearch() {
+    // Show skeleton
+    const grid = document.getElementById('search-items');
+    if (grid && grid.children.length === 0) {
+        grid.innerHTML = skeletonCards(6);
+    }
+
+    // Use cached data if available
+    if (allItems.length > 0) {
+        renderSearchItems(allItems);
+    }
+
     try {
         const items = await api.getItems();
         allItems = items;
+        cache.set('items', items);
         renderSearchItems(items);
     } catch (err) {
         console.error('Load search error:', err);
@@ -252,9 +339,16 @@ function toggleLocation(el) {
 let currentStoragePath = [];
 
 async function loadStorage() {
+    // Show skeleton
+    const content = document.getElementById('storage-content');
+    if (content && content.children.length === 0) {
+        content.innerHTML = '<div style="padding:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">' + skeletonCards(4) + '</div>';
+    }
+
     try {
         const containers = await api.getContainerTree();
         allContainers = await api.getContainers();
+        cache.set('containers', allContainers);
         currentStoragePath = [];
         renderStorageTree(containers);
     } catch (err) {
@@ -307,10 +401,14 @@ function renderStorageTree(nodes, depth = 0) {
     html += '<div class="storage-grid">';
     nodes.forEach(node => {
         const totalItems = countItemsInNode(node);
+        const photoHtml = node.photo
+            ? `<img src="${node.photo}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;">`
+            : `${icons[node.type] || '📁'}`;
         html += `
             <div class="storage-item" onclick="drillIntoStorage(${node.id}, '${escapeHtml(node.name)}', '${icons[node.type] || '📁'}')">
-                <div class="storage-item-photo">${icons[node.type] || '📁'}</div>
+                <div class="storage-item-photo">${photoHtml}</div>
                 <div class="storage-item-name">${escapeHtml(node.name)} (${totalItems})</div>
+                <button class="storage-item-edit" onclick="event.stopPropagation(); editContainerById(${node.id})">✏️</button>
             </div>
         `;
     });
@@ -446,6 +544,9 @@ async function saveItem() {
         return;
     }
 
+    const btn = document.querySelector('#add-item-sheet .bottom-sheet-save');
+    setBtnLoading(btn, true);
+
     try {
         const item = await api.createItem({
             name: name,
@@ -461,9 +562,12 @@ async function saveItem() {
 
         closeAddItem();
         showSnackbar('Вещь добавлена!');
+        cache.remove('items');
         loadHome();
     } catch (err) {
         showSnackbar('Ошибка: ' + err.message);
+    } finally {
+        setBtnLoading(btn, false);
     }
 }
 
@@ -478,6 +582,9 @@ function closeAddContainer() {
     document.getElementById('add-container-overlay').classList.remove('active');
     document.getElementById('add-container-sheet').classList.remove('active');
     document.getElementById('container-name').value = '';
+    document.getElementById('containerPhotoInput').value = '';
+    document.getElementById('container-photo-preview').style.display = 'none';
+    document.getElementById('container-photo-placeholder').style.display = '';
 }
 
 async function saveContainer() {
@@ -487,17 +594,110 @@ async function saveContainer() {
         return;
     }
 
+    const btn = document.querySelector('#add-container-sheet .bottom-sheet-save');
+    setBtnLoading(btn, true);
+
     try {
-        await api.createContainer(
+        const container = await api.createContainer(
             name,
             document.getElementById('container-type').value,
             document.getElementById('container-parent').value || null
         );
+
+        const photoInput = document.getElementById('containerPhotoInput');
+        if (photoInput.files[0]) {
+            await api.uploadContainerPhoto(container.id, photoInput.files[0]);
+        }
+
         closeAddContainer();
         showSnackbar('Место добавлено!');
+        cache.remove('containers');
         loadHome();
     } catch (err) {
         showSnackbar('Ошибка: ' + err.message);
+    } finally {
+        setBtnLoading(btn, false);
+    }
+}
+
+function handleContainerPhotoSelect(input, previewId, placeholderId) {
+    if (!input.files[0]) return;
+    const reader = new FileReader();
+    const preview = document.getElementById(previewId);
+    const placeholder = document.getElementById(placeholderId);
+    reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+let currentContainer = null;
+
+function editContainerById(id) {
+    const containers = cache.get('containers') || [];
+    const container = containers.find(c => c.id === id);
+    if (container) openEditContainer(container);
+}
+
+function openEditContainer(container) {
+    currentContainer = container;
+    document.getElementById('edit-container-name').value = container.name || '';
+    document.getElementById('edit-container-type').value = container.type || 'other';
+
+    const preview = document.getElementById('edit-container-photo-preview');
+    const placeholder = document.getElementById('edit-container-photo-placeholder');
+    if (container.photo) {
+        preview.src = container.photo;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        preview.style.display = 'none';
+        placeholder.style.display = '';
+    }
+
+    document.getElementById('edit-container-overlay').classList.add('active');
+    document.getElementById('edit-container-sheet').classList.add('active');
+}
+
+function closeEditContainer() {
+    document.getElementById('edit-container-overlay').classList.remove('active');
+    document.getElementById('edit-container-sheet').classList.remove('active');
+    document.getElementById('editContainerPhotoInput').value = '';
+    currentContainer = null;
+}
+
+async function saveContainerEdit() {
+    if (!currentContainer) return;
+    const name = document.getElementById('edit-container-name').value.trim();
+    if (!name) {
+        showSnackbar('Введите название места');
+        return;
+    }
+
+    const btn = document.querySelector('#edit-container-sheet .bottom-sheet-save');
+    setBtnLoading(btn, true);
+
+    try {
+        await api.updateContainer(currentContainer.id, {
+            name: name,
+            type: document.getElementById('edit-container-type').value
+        });
+
+        const photoInput = document.getElementById('editContainerPhotoInput');
+        if (photoInput.files[0]) {
+            await api.uploadContainerPhoto(currentContainer.id, photoInput.files[0]);
+        }
+
+        closeEditContainer();
+        showSnackbar('Место обновлено');
+        cache.remove('containers');
+        loadStorage();
+    } catch (err) {
+        showSnackbar('Ошибка: ' + err.message);
+    } finally {
+        setBtnLoading(btn, false);
     }
 }
 
@@ -555,10 +755,102 @@ function closeItemDetail() {
     currentItem = null;
 }
 
+function toggleDetailMenu() {
+    // TODO: add overflow menu
+}
+
+function toggleCollapsible(header) {
+    const collapsible = header.parentElement;
+    collapsible.classList.toggle('open');
+}
+
 function editCurrentItem() {
     if (!currentItem) return;
     closeItemDetail();
-    showSnackbar('Редактирование: ' + currentItem.name);
+    openEditItem(currentItem);
+}
+
+async function openEditItem(item) {
+    document.getElementById('edit-item-name').value = item.name || '';
+    document.getElementById('edit-item-color').value = item.color || '';
+    document.getElementById('edit-item-category').value = item.category || '';
+
+    const preview = document.getElementById('edit-photo-preview');
+    const placeholder = document.getElementById('edit-photo-placeholder');
+    if (item.images && item.images.length) {
+        preview.src = item.images[0];
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    } else {
+        preview.style.display = 'none';
+        placeholder.style.display = '';
+    }
+
+    const select = document.getElementById('edit-item-container');
+    try {
+        const containers = await api.getContainers();
+        select.innerHTML = '<option value="">Без места</option>' +
+            containers.map(c => `<option value="${c.id}" ${c.id === item.container_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+    } catch (err) {
+        select.innerHTML = '<option value="">Без места</option>';
+    }
+
+    document.getElementById('edit-item-overlay').classList.add('active');
+    document.getElementById('edit-item-sheet').classList.add('active');
+}
+
+function closeEditItem() {
+    document.getElementById('edit-item-overlay').classList.remove('active');
+    document.getElementById('edit-item-sheet').classList.remove('active');
+    document.getElementById('editPhotoInput').value = '';
+}
+
+function handleEditPhotoSelect(input) {
+    if (!input.files[0]) return;
+    const reader = new FileReader();
+    const preview = document.getElementById('edit-photo-preview');
+    const placeholder = document.getElementById('edit-photo-placeholder');
+    reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+async function saveItemEdit() {
+    if (!currentItem) return;
+    const name = document.getElementById('edit-item-name').value.trim();
+    if (!name) {
+        showSnackbar('Введите название вещи');
+        return;
+    }
+
+    const btn = document.querySelector('#edit-item-sheet .bottom-sheet-save');
+    setBtnLoading(btn, true);
+
+    try {
+        await api.updateItem(currentItem.id, {
+            name: name,
+            container_id: document.getElementById('edit-item-container').value || null,
+            color: document.getElementById('edit-item-color').value.trim() || null,
+            category: document.getElementById('edit-item-category').value.trim() || null
+        });
+
+        const photoInput = document.getElementById('editPhotoInput');
+        if (photoInput.files[0]) {
+            await api.uploadPhoto(currentItem.id, photoInput.files[0]);
+        }
+
+        closeEditItem();
+        showSnackbar('Вещь обновлена');
+        cache.remove('items');
+        loadHome();
+    } catch (err) {
+        showSnackbar('Ошибка: ' + err.message);
+    } finally {
+        setBtnLoading(btn, false);
+    }
 }
 
 function deleteCurrentItem() {
@@ -572,14 +864,20 @@ function closeConfirmDelete() {
 
 async function confirmDelete() {
     if (!currentItem) return;
+    const btn = document.querySelector('.detail-confirm-btn.confirm');
+    setBtnLoading(btn, true);
+
     try {
         await api.deleteItem(currentItem.id);
         closeConfirmDelete();
         closeItemDetail();
         showSnackbar('Вещь удалена');
+        cache.remove('items');
         loadHome();
     } catch (err) {
         showSnackbar('Ошибка: ' + err.message);
+    } finally {
+        setBtnLoading(btn, false);
     }
 }
 

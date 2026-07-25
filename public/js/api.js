@@ -123,6 +123,20 @@ class VaultAPI {
         return data.data;
     }
 
+    async uploadContainerPhoto(containerId, file) {
+        const formData = new FormData();
+        formData.append('container_id', containerId);
+        formData.append('photo', file);
+        const res = await fetch(API_BASE + 'photos', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${this.token}` },
+            body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        return data.data;
+    }
+
     async deletePhoto(imageId) {
         return this.request('photos', {
             method: 'DELETE',

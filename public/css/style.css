@@ -622,6 +622,25 @@ body {
     padding: 16px;
 }
 
+/* Edit photo area */
+.edit-photo-area {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--bg);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.edit-photo-area:active {
+    border-color: var(--primary);
+}
+
 /* Snackbar */
 .snackbar {
     position: fixed;
@@ -1172,9 +1191,31 @@ body {
     cursor: pointer;
     box-shadow: var(--shadow);
     transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
 }
 .storage-item:active {
     transform: scale(0.98);
+}
+.storage-item-edit {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+.storage-item-edit:active {
+    transform: scale(0.9);
+    background: var(--bg);
 }
 .storage-item-photo {
     width: 100%;
@@ -1255,4 +1296,67 @@ body {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
     padding: 0 16px;
+}
+
+/* ===== Loading State ===== */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+.btn-loading .btn-text {
+    visibility: hidden;
+}
+.btn-loading .btn-spinner {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -10px;
+    margin-left: -10px;
+}
+.btn-spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Skeleton Loading ===== */
+.skeleton {
+    background: linear-gradient(90deg, #eee 25%, #e0e0e0 50%, #eee 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+}
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.skeleton-card {
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+.skeleton-image {
+    width: 100%;
+    aspect-ratio: 1;
+}
+.skeleton-line {
+    height: 14px;
+    margin: 8px 12px;
+    border-radius: 4px;
+}
+.skeleton-line-short {
+    width: 60%;
+}
+.skeleton-line-xs {
+    width: 40%;
 }

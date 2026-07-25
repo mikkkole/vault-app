@@ -22,23 +22,14 @@ const upload = multer({
 // Upload photo
 router.post('/', auth, upload.single('photo'), async (req, res) => {
   try {
-    const { item_id } = req.body;
+    const { item_id, container_id } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    if (!item_id) {
-      return res.status(400).json({ error: 'Item ID required' });
-    }
-
-    const itemCheck = await pool.query(
-      'SELECT id FROM items WHERE id = $1 AND user_id = $2',
-      [item_id, req.userId]
-    );
-
-    if (itemCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Item not found' });
+    if (!item_id && !container_id) {
+      return res.status(400).json({ error: 'Item ID or Container ID required' });
     }
 
     // Upload to Cloudinary
@@ -48,6 +39,32 @@ router.post('/', auth, upload.single('photo'), async (req, res) => {
       folder: 'vault',
       transformation: [{ width: 800, height: 800, crop: 'limit' }]
     });
+
+    // Container photo - save URL directly to containers.photo
+    if (container_id) {
+      const containerCheck = await pool.query(
+        'SELECT id FROM containers WHERE id = $1 AND user_id = $2',
+        [container_id, req.userId]
+      );
+      if (containerCheck.rows.length === 0) {
+        return res.status(404).json({ error: 'Container not found' });
+      }
+      await pool.query(
+        'UPDATE containers SET photo = $1 WHERE id = $2',
+        [result.secure_url, container_id]
+      );
+      return res.status(201).json({ data: { photo: result.secure_url } });
+    }
+
+    // Item photo - save to item_images table
+    const itemCheck = await pool.query(
+      'SELECT id FROM items WHERE id = $1 AND user_id = $2',
+      [item_id, req.userId]
+    );
+
+    if (itemCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
 
     const existingImages = await pool.query(
       'SELECT COUNT(*) FROM item_images WHERE item_id = $1',
