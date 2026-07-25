@@ -994,12 +994,12 @@ function handlePhotoSelect(input) {
 async function saveItem() {
     const nameInput = document.getElementById('item-name').value.trim();
     const photoInput = document.getElementById('photoInput');
-    const hasPhoto = photoInput.files && photoInput.files[0];
+    const photoFile = photoInput.files && photoInput.files[0] ? photoInput.files[0] : null;
 
     // Derive name: input > photo filename > default
     let name = nameInput;
-    if (!name && hasPhoto) {
-        name = photoInput.files[0].name.replace(/\.[^.]+$/, '');
+    if (!name && photoFile) {
+        name = photoFile.name.replace(/\.[^.]+$/, '');
     }
     if (!name) {
         name = 'Без названия';
@@ -1031,8 +1031,8 @@ async function saveItem() {
             category: tempItem.category
         });
 
-        if (hasPhoto) {
-            await api.uploadPhoto(item.id, photoInput.files[0]);
+        if (photoFile) {
+            await api.uploadPhoto(item.id, photoFile);
         }
 
         // Replace temp with real item
