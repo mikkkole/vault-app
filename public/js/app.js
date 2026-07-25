@@ -910,6 +910,7 @@ function closeAddItem() {
     document.getElementById('item-color').value = '';
     document.getElementById('item-category').value = '';
     document.getElementById('photoPreview').style.display = 'none';
+    document.getElementById('photoInput').value = '';
     // Close dropdowns
     document.querySelectorAll('.category-dropdown, .color-dropdown').forEach(d => d.classList.remove('active'));
 }
@@ -976,13 +977,20 @@ function handlePhotoSelect(input) {
 }
 
 async function saveItem() {
-    const name = document.getElementById('item-name').value.trim();
+    const nameInput = document.getElementById('item-name').value.trim();
+    const photoInput = document.getElementById('photoInput');
+    const hasPhoto = photoInput.files && photoInput.files[0];
+
+    // Derive name: input > photo filename > default
+    let name = nameInput;
+    if (!name && hasPhoto) {
+        name = photoInput.files[0].name.replace(/\.[^.]+$/, '');
+    }
     if (!name) {
-        showSnackbar('Введите название вещи');
-        return;
+        name = 'Без названия';
     }
 
-    const btn = document.querySelector('#add-item-sheet .bottom-sheet-save');
+    const btn = document.querySelector('#add-item-sheet .btn-save');
     setBtnLoading(btn, true);
 
     const tempItem = {
@@ -1008,8 +1016,7 @@ async function saveItem() {
             category: tempItem.category
         });
 
-        const photoInput = document.getElementById('photoInput');
-        if (photoInput.files[0]) {
+        if (hasPhoto) {
             await api.uploadPhoto(item.id, photoInput.files[0]);
         }
 
