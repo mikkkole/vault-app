@@ -312,7 +312,7 @@ body {
     line-height: 1;
 }
 .fab-mass {
-    right: calc(50% - 195px + 80px);
+    right: calc(50% - 195px + 16px);
     background: linear-gradient(135deg, var(--secondary), #00CEC9);
     box-shadow: 0 4px 16px rgba(0, 184, 148, 0.4);
 }
@@ -320,11 +320,11 @@ body {
     box-shadow: 0 2px 8px rgba(0, 184, 148, 0.3);
 }
 .fab:not(.fab-mass) {
-    right: calc(50% - 195px + 16px);
+    right: calc(50% - 195px + 80px);
 }
 @media (max-width: 390px) {
-    .fab-mass { right: 80px; }
-    .fab:not(.fab-mass) { right: 16px; }
+    .fab-mass { right: 16px; }
+    .fab:not(.fab-mass) { right: 80px; }
 }
 
 /* Search bar - sticky bottom */
