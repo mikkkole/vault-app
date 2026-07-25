@@ -88,15 +88,19 @@ router.post('/', auth, upload.single('photo'), async (req, res) => {
 // Batch upload photos
 router.post('/batch', auth, upload.array('photos', 50), async (req, res) => {
   try {
-    const itemIds = req.body.item_ids;
+    const rawItemIds = req.body.item_ids;
     const files = req.files;
 
-    if (!itemIds || !files || itemIds.length !== files.length) {
-      return res.status(400).json({ error: 'Item IDs and photos must match' });
+    if (!rawItemIds || !files) {
+      return res.status(400).json({ error: 'Item IDs and photos required' });
     }
 
     // Parse item_ids from string or array
-    const ids = typeof itemIds === 'string' ? JSON.parse(itemIds) : itemIds;
+    const ids = typeof rawItemIds === 'string' ? JSON.parse(rawItemIds) : rawItemIds;
+
+    if (!Array.isArray(ids) || ids.length !== files.length) {
+      return res.status(400).json({ error: 'Item IDs and photos must match' });
+    }
 
     const results = [];
     const errors = [];
