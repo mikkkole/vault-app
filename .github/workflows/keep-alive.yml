@@ -1,0 +1,19 @@
+name: Keep-alive ping
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://vault-app-8vjd.onrender.com/api/health)
+          echo "Health check returned: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Warning: health check returned non-200 status"
+            exit 1
+          fi
