@@ -1,3 +1,243 @@
+// ===== Multi-Select State =====
+const selectState = {
+    active: false,
+    selected: new Set(),
+    longPressTimer: null,
+    longPressThreshold: 500,
+};
+
+function toggleSelectMode(itemId) {
+    if (!selectState.active) {
+        selectState.active = true;
+        selectState.selected.clear();
+        showActionBar();
+    }
+    toggleSelect(itemId);
+}
+
+function toggleSelect(itemId) {
+    if (selectState.selected.has(itemId)) {
+        selectState.selected.delete(itemId);
+    } else {
+        selectState.selected.add(itemId);
+    }
+    updateSelectUI();
+    if (selectState.selected.size === 0) {
+        exitSelectMode();
+    }
+}
+
+function exitSelectMode() {
+    selectState.active = false;
+    selectState.selected.clear();
+    hideActionBar();
+    updateSelectUI();
+}
+
+function updateSelectUI() {
+    document.querySelectorAll('.item-card').forEach(card => {
+        const id = parseInt(card.dataset.id);
+        const isSelected = selectState.selected.has(id);
+        card.classList.toggle('selected', isSelected);
+        let check = card.querySelector('.item-check');
+        if (!check) {
+            check = document.createElement('div');
+            check.className = 'item-check';
+            card.appendChild(check);
+        }
+        check.innerHTML = isSelected ? '&#10003;' : '';
+    });
+}
+
+function showActionBar() {
+    document.getElementById('fab-add').style.display = 'none';
+    document.getElementById('fab-mass-add').style.display = 'none';
+    document.getElementById('select-action-bar').classList.add('active');
+    updateActionCount();
+}
+
+function hideActionBar() {
+    document.getElementById('fab-add').style.display = '';
+    document.getElementById('fab-mass-add').style.display = '';
+    document.getElementById('select-action-bar').classList.remove('active');
+}
+
+function updateActionCount() {
+    const count = selectState.selected.size;
+    document.getElementById('select-count').textContent = count;
+}
+
+// Long press handlers
+function onItemPointerDown(e, itemId) {
+    if (selectState.active) return;
+    selectState.longPressTimer = setTimeout(() => {
+        e.preventDefault();
+        toggleSelectMode(itemId);
+    }, selectState.longPressThreshold);
+}
+
+function onItemPointerUp() {
+    clearTimeout(selectState.longPressTimer);
+}
+
+function onItemPointerMove() {
+    clearTimeout(selectState.longPressTimer);
+}
+
+// Click handler for items
+function onItemClick(itemId) {
+    if (selectState.active) {
+        toggleSelect(itemId);
+    } else {
+        showItemDetail(itemId);
+    }
+}
+
+// Desktop: Ctrl+Click
+function onItemContextMenu(e, itemId) {
+    e.preventDefault();
+    toggleSelectMode(itemId);
+}
+
+// Bulk operations
+function selectAll() {
+    allItems.forEach(item => selectState.selected.add(item.id));
+    updateSelectUI();
+    updateActionCount();
+}
+
+function deselectAll() {
+    exitSelectMode();
+}
+
+async function bulkDelete() {
+    if (selectState.selected.size === 0) return;
+    if (!confirm(`Удалить ${selectState.selected.size} вещей?`)) return;
+
+    const ids = [...selectState.selected];
+    showProgressOverlay(`Удаление ${ids.length} вещей...`);
+    let cancelled = false;
+
+    for (const id of ids) {
+        if (cancelled) break;
+        try {
+            await api.deleteItem(id);
+        } catch (e) {
+            console.error('Delete failed:', e);
+        }
+    }
+
+    hideProgressOverlay();
+    exitSelectMode();
+    cache.remove('items');
+    loadHome();
+    showSnackbar(`Удалено ${ids.length} вещей`);
+}
+
+function bulkMove() {
+    if (selectState.selected.size === 0) return;
+    showContainerPickerForMove((containerId) => {
+        doBulkMove(containerId);
+    });
+}
+
+function showContainerPickerForMove(callback) {
+    if (containerTree.length === 0) {
+        api.getContainerTree().then(tree => {
+            containerTree = tree;
+            showContainerPicker(callback);
+        });
+    } else {
+        showContainerPicker(callback);
+    }
+}
+
+async function doBulkMove(containerId) {
+    const ids = [...selectState.selected];
+    showProgressOverlay(`Перенос ${ids.length} вещей...`);
+
+    for (const id of ids) {
+        try {
+            await api.updateItem(id, { container_id: containerId });
+        } catch (e) {
+            console.error('Move failed:', e);
+        }
+    }
+
+    hideProgressOverlay();
+    exitSelectMode();
+    cache.remove('items');
+    loadHome();
+    const container = allContainers.find(c => c.id === containerId);
+    showSnackbar(`Перенесено ${ids.length} вещей в ${container ? container.name : 'место'}`);
+}
+
+function bulkEdit() {
+    if (selectState.selected.size === 0) return;
+    showBulkEditSheet();
+}
+
+function showBulkEditSheet() {
+    const items = allItems.filter(i => selectState.selected.has(i.id));
+    document.getElementById('bulk-edit-count').textContent = items.length;
+
+    // Load containers
+    const select = document.getElementById('bulk-edit-container');
+    select.innerHTML = '<option value="">Без места</option>' +
+        allContainers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+
+    document.getElementById('bulk-edit-overlay').classList.add('active');
+    document.getElementById('bulk-edit-sheet').classList.add('active');
+}
+
+function closeBulkEdit() {
+    document.getElementById('bulk-edit-overlay').classList.remove('active');
+    document.getElementById('bulk-edit-sheet').classList.remove('active');
+}
+
+async function saveBulkEdit() {
+    const ids = [...selectState.selected];
+    const color = document.getElementById('bulk-edit-color').value.trim();
+    const category = document.getElementById('bulk-edit-category').value.trim();
+    const containerId = document.getElementById('bulk-edit-container').value || null;
+
+    const fields = {};
+    if (color) fields.color = color;
+    if (category) fields.category = category;
+    if (containerId !== null) fields.container_id = containerId;
+
+    if (Object.keys(fields).length === 0) {
+        closeBulkEdit();
+        return;
+    }
+
+    showProgressOverlay(`Редактирование ${ids.length} вещей...`);
+
+    for (const id of ids) {
+        try {
+            await api.updateItem(id, fields);
+        } catch (e) {
+            console.error('Update failed:', e);
+        }
+    }
+
+    hideProgressOverlay();
+    closeBulkEdit();
+    exitSelectMode();
+    cache.remove('items');
+    loadHome();
+    showSnackbar(`Обновлено ${ids.length} вещей`);
+}
+
+function showProgressOverlay(text) {
+    document.getElementById('progress-text').textContent = text;
+    document.getElementById('progress-overlay').classList.add('active');
+}
+
+function hideProgressOverlay() {
+    document.getElementById('progress-overlay').classList.remove('active');
+}
+
 // Vault App - Main JavaScript
 let currentScreen = 'home';
 let allItems = [];
@@ -271,7 +511,12 @@ function renderRecentItems(items) {
     const icons = ['👕', '👟', '🔧', '📚', '📄', '🎒'];
 
     grid.innerHTML = items.map((item, i) => `
-        <div class="item-card" onclick="showItemDetail(${item.id})">
+        <div class="item-card" data-id="${item.id}"
+             onclick="onItemClick(${item.id})"
+             oncontextmenu="onItemContextMenu(event, ${item.id})"
+             onpointerdown="onItemPointerDown(event, ${item.id})"
+             onpointerup="onItemPointerUp()"
+             onpointermove="onItemPointerMove()">
             <div class="item-image" style="background: ${colors[i % colors.length]};">
                 ${item.images && item.images.length
                     ? `<img src="${item.images[0]}" style="width:100%;height:100%;object-fit:cover;" alt="">`
@@ -345,7 +590,12 @@ function renderSearchItems(items) {
     ];
 
     grid.innerHTML = items.map((item, i) => `
-        <div class="item-card" onclick="showItemDetail(${item.id})">
+        <div class="item-card" data-id="${item.id}"
+             onclick="onItemClick(${item.id})"
+             oncontextmenu="onItemContextMenu(event, ${item.id})"
+             onpointerdown="onItemPointerDown(event, ${item.id})"
+             onpointerup="onItemPointerUp()"
+             onpointermove="onItemPointerMove()">
             <div class="item-image" style="background: ${colors[i % colors.length]};">
                 ${item.images && item.images.length
                     ? `<img src="${item.images[0]}" style="width:100%;height:100%;object-fit:cover;" alt="">`
@@ -509,7 +759,12 @@ function renderStorageItems(items) {
     items.forEach((item, i) => {
         const color = colors[item.id % colors.length];
         html += `
-            <div class="storage-item" onclick="showItemDetail(${item.id})">
+            <div class="storage-item item-card" data-id="${item.id}"
+                 onclick="onItemClick(${item.id})"
+                 oncontextmenu="onItemContextMenu(event, ${item.id})"
+                 onpointerdown="onItemPointerDown(event, ${item.id})"
+                 onpointerup="onItemPointerUp()"
+                 onpointermove="onItemPointerMove()">
                 <div class="storage-item-photo" style="background: linear-gradient(135deg, ${color});">
                     ${item.images && item.images.length
                         ? `<img src="${item.images[0]}" style="width:100%;height:100%;object-fit:cover;" alt="">`
