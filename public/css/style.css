@@ -1771,8 +1771,9 @@ body {
     font-weight: 600;
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 24px;
     cursor: pointer;
+    padding: 4px 8px;
 }
 .label-review-progress {
     padding: 12px 16px;
@@ -1801,17 +1802,18 @@ body {
 .label-review-nav {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0 16px 12px;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 16px 12px;
 }
 .label-nav-btn {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: none;
     background: none;
     color: var(--primary);
-    font-size: 20px;
+    font-size: 22px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1821,6 +1823,13 @@ body {
 .label-nav-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
+}
+.label-review-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    align-self: center;
 }
 .label-review-location {
     display: flex;
@@ -1851,12 +1860,6 @@ body {
     gap: 4px;
     padding: 0 16px 12px;
     flex-wrap: wrap;
-}
-.label-review-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border);
 }
 .label-review-dot.active {
     width: 24px;

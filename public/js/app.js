@@ -654,9 +654,16 @@ function changeMassAddLocation(e) {
     });
 }
 
-function showContainerPicker(callback) {
-    const containers = cache.get('containers') || allContainers;
-    const tree = containerTree.length > 0 ? containerTree : containers;
+async function showContainerPicker(callback) {
+    // Ensure we have tree data
+    if (containerTree.length === 0) {
+        try {
+            containerTree = await api.getContainerTree();
+        } catch (e) {
+            console.error('Failed to load container tree:', e);
+        }
+    }
+    const tree = containerTree.length > 0 ? containerTree : (cache.get('containers') || allContainers);
 
     // Build flat list with full paths
     function flattenWithPaths(nodes, prefix) {
@@ -1612,11 +1619,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Close popups on outside click
     document.addEventListener('click', function(e) {
-        // Close container dropdown
-        const dropdown = document.getElementById('container-dropdown');
-        if (dropdown && dropdown.classList.contains('active') && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('active');
-        }
+        // Close container dropdowns
+        document.querySelectorAll('.container-select-dropdown').forEach(d => {
+            if (d.classList.contains('active') && !d.contains(e.target) && !e.target.closest('.mass-add-location-change')) {
+                d.classList.remove('active');
+            }
+        });
 
         // Close item menu dropdown
         const menuDropdown = document.getElementById('item-menu-dropdown');
