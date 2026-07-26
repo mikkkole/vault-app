@@ -815,6 +815,18 @@ function renderLabelCard() {
     input.focus();
 
     updateLabelDots();
+
+    // On last item, show only "Сохранить"
+    const isLast = currentLabelIndex >= massAddState.photos.length - 1;
+    const bottomBar = document.querySelector('.label-review-bottom-bar');
+    if (isLast) {
+        bottomBar.innerHTML = '<button class="label-bottom-btn primary" onclick="saveAllItems()">Сохранить</button>';
+    } else {
+        bottomBar.innerHTML = `
+            <button class="label-bottom-btn skip" onclick="skipCurrentItem()">Дальше</button>
+            <button class="label-bottom-btn primary" onclick="saveAllItems()">Сохранить все</button>
+        `;
+    }
 }
 
 function skipCurrentItem() {
@@ -847,8 +859,9 @@ function updateLabelDots() {
 
 async function saveAllItems() {
     if (massAddState.currentPhase === 'saving') return;
-    const saveBtn = document.querySelector('.label-review-save');
-    if (saveBtn) saveBtn.disabled = true;
+
+    // Disable all save buttons to prevent double-click
+    document.querySelectorAll('.label-bottom-btn.primary').forEach(b => b.disabled = true);
 
     massAddState.currentPhase = 'saving';
 
@@ -861,8 +874,6 @@ async function saveAllItems() {
     }
 
     await doSaveItems();
-
-    if (saveBtn) saveBtn.disabled = false;
 }
 
 async function saveAllRaw() {
