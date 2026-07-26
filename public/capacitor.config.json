@@ -1,0 +1,17 @@
+{
+  "appId": "com.vault.app",
+  "appName": "Vault",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["*"]
+  },
+  "plugins": {
+    "Camera": {
+      "androidPermissions": ["android.permission.CAMERA"]
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}
