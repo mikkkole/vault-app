@@ -688,7 +688,7 @@ async function showContainerPicker(callback) {
         const list = document.getElementById(listId);
         if (!list) return;
         list.innerHTML = flatList.map(c =>
-            `<div class="category-option" onclick="selectContainerForMassAdd(${c.id})">${escapeHtml(c.path)}</div>`
+            `<div class="category-option" onclick="event.stopPropagation(); selectContainerForMassAdd(${c.id})">${escapeHtml(c.path)}</div>`
         ).join('');
     });
 
