@@ -1468,6 +1468,32 @@ function showAddItem() {
     document.getElementById('fab-add').style.display = 'none';
     document.getElementById('fab-mass-add').style.display = 'none';
     loadContainersForSelect();
+
+    // Restore saved state if returning from container creation
+    if (window._addFormItemState) {
+        const s = window._addFormItemState;
+        document.getElementById('item-name').value = s.name || '';
+        document.getElementById('item-color').value = s.color || '';
+        document.getElementById('item-category').value = s.category || '';
+        if (s.containerId) document.getElementById('item-container').value = s.containerId;
+        if (s.photoPreview) {
+            const preview = document.getElementById('photoPreview');
+            preview.src = s.photoPreview;
+            preview.style.display = 'block';
+        }
+        window._addFormItemState = null;
+    }
+}
+
+function saveAddItemState() {
+    const preview = document.getElementById('photoPreview');
+    window._addFormItemState = {
+        name: document.getElementById('item-name').value,
+        color: document.getElementById('item-color').value,
+        category: document.getElementById('item-category').value,
+        containerId: document.getElementById('item-container').value,
+        photoPreview: preview.style.display !== 'none' ? preview.src : null,
+    };
 }
 
 function closeAddItem() {
@@ -1475,13 +1501,15 @@ function closeAddItem() {
     document.getElementById('add-item-sheet').classList.remove('active');
     document.getElementById('fab-add').style.display = '';
     document.getElementById('fab-mass-add').style.display = '';
-    document.getElementById('item-name').value = '';
-    document.getElementById('item-color').value = '';
-    document.getElementById('item-category').value = '';
-    document.getElementById('photoPreview').style.display = 'none';
-    document.getElementById('photoInput').value = '';
-    // Close dropdowns
-    document.querySelectorAll('.category-dropdown, .color-dropdown').forEach(d => d.classList.remove('active'));
+    // Don't clear fields if returning from container creation
+    if (!window._containerCreateContext) {
+        document.getElementById('item-name').value = '';
+        document.getElementById('item-color').value = '';
+        document.getElementById('item-category').value = '';
+        document.getElementById('photoPreview').style.display = 'none';
+        document.getElementById('photoInput').value = '';
+        document.querySelectorAll('.category-dropdown, .color-dropdown').forEach(d => d.classList.remove('active'));
+    }
 }
 
 // Category/Color dropdowns
@@ -1815,6 +1843,7 @@ async function loadContainersForSelect() {
         select.onchange = function() {
             if (this.value === '__new__') {
                 this.value = '';
+                saveAddItemState();
                 window._containerCreateContext = 'add-item';
                 closeAddItem();
                 showAddContainer();
