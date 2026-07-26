@@ -110,6 +110,22 @@ body {
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
+.header-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+.header-stat-value {
+    font-weight: 700;
+}
+.header-stat-value.purple { color: var(--primary); }
+.header-stat-value.green { color: var(--secondary); }
+.header-stat-sep {
+    color: var(--border);
+}
 .header-hero-text .header-subtitle {
     font-size: 13px;
     color: var(--text-secondary);
