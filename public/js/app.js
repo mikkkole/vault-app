@@ -1052,6 +1052,24 @@ function changeMassAddLocation(e) {
     });
 }
 
+function massAddCreateContainer() {
+    document.querySelectorAll('.container-select-dropdown').forEach(d => d.classList.remove('active'));
+
+    const isLabelReview = document.getElementById('label-review').classList.contains('active');
+    const isMassAdd = document.getElementById('mass-add-screen').classList.contains('active');
+
+    if (isLabelReview) {
+        window._containerCreateContext = 'mass-add-label';
+    } else if (isMassAdd) {
+        window._containerCreateContext = 'mass-add';
+    }
+
+    document.getElementById('mass-add-screen').classList.remove('active');
+    document.getElementById('label-review').classList.remove('active');
+
+    showAddContainer();
+}
+
 async function showContainerPicker(callback) {
     // Ensure we have tree data
     if (containerTree.length === 0) {
@@ -1705,11 +1723,20 @@ async function saveContainer() {
                 document.getElementById('mass-add-screen').classList.add('active');
                 document.getElementById('fab-add').style.display = 'none';
                 document.getElementById('fab-mass-add').style.display = 'none';
+                // Select the new container
+                massAddState.selectedContainerId = container.id;
+                document.getElementById('mass-add-location-name').textContent = container.name;
+            }, 300);
+        } else if (ctx === 'mass-add-label') {
+            setTimeout(() => {
+                document.getElementById('label-review').classList.add('active');
+                // Select the new container
+                massAddState.selectedContainerId = container.id;
+                updateLabelLocation();
             }, 300);
         } else if (ctx === 'add-item') {
             setTimeout(() => {
                 showAddItem();
-                // Select the newly created container
                 const select = document.getElementById('item-container');
                 if (select) {
                     const newOption = select.querySelector(`option[value="${container.id}"]`);
