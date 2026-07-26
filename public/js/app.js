@@ -636,7 +636,8 @@ function saveDraftMassAdd() {
     showSnackbar('Черновик сохранён (без фото)');
 }
 
-function changeMassAddLocation() {
+function changeMassAddLocation(e) {
+    if (e) e.stopPropagation();
     showContainerPicker((containerId) => {
         massAddState.selectedContainerId = containerId;
         const container = allContainers.find(c => c.id === containerId);
