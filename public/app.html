@@ -487,13 +487,16 @@
             <span class="mass-add-title">Быстрое добавление</span>
             <span class="mass-add-counter" id="mass-add-counter">0</span>
         </div>
-        <div class="mass-add-location" id="mass-add-location">
+        <div class="mass-add-location" id="mass-add-location" style="position:relative">
             <span class="mass-add-location-icon">&#128205;</span>
             <div class="mass-add-location-text">
                 <div class="mass-add-location-label">Добавить в</div>
                 <div class="mass-add-location-name" id="mass-add-location-name">Не выбрано</div>
             </div>
             <span class="mass-add-location-change" onclick="changeMassAddLocation()">Изменить</span>
+            <div class="container-select-dropdown" id="container-dropdown" style="z-index:170">
+                <div class="container-select-list" id="container-list"></div>
+            </div>
         </div>
         <div class="mass-add-viewfinder">
             <div class="mass-add-frame" id="mass-add-frame">
@@ -564,11 +567,6 @@
                 </button>
             </div>
         </div>
-    </div>
-
-    <!-- Container Picker Dropdown -->
-    <div class="container-select-dropdown" id="container-dropdown">
-        <div class="container-select-list" id="container-list"></div>
     </div>
 
     <script src="js/api.js"></script>

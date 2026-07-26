@@ -1997,12 +1997,18 @@ body {
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--dark-surface);
+    border: 1px solid var(--dark-border);
     border-radius: var(--radius);
     max-height: 200px;
     overflow-y: auto;
-    z-index: 10;
+    z-index: 170;
+}
+.container-select-dropdown .category-option {
+    color: white;
+}
+.container-select-dropdown .category-option:hover {
+    background: rgba(255,255,255,0.1);
 }
 .container-select-dropdown.active {
     display: block;
