@@ -180,9 +180,8 @@ function closeMoveModal() {
 
 function moveCreateContainer() {
     closeMoveModal();
+    window._containerCreateContext = 'move';
     showAddContainer();
-    // After container is created, we'll return to move modal
-    window._returnToMoveAfterCreate = true;
 }
 
 async function doBulkMove(containerId) {
@@ -1668,10 +1667,15 @@ async function saveContainer() {
         containerTree = [];
         renderHome();
 
-        // Return to move modal if needed
-        if (window._returnToMoveAfterCreate) {
-            window._returnToMoveAfterCreate = false;
+        // Return to appropriate context
+        const ctx = window._containerCreateContext;
+        window._containerCreateContext = null;
+        if (ctx === 'move') {
             setTimeout(() => showContainerPickerMove(), 300);
+        } else if (ctx === 'mass-add') {
+            setTimeout(() => {
+                document.getElementById('mass-add-screen').classList.add('active');
+            }, 300);
         }
     } catch (err) {
         // Rollback
@@ -1810,10 +1814,13 @@ async function loadContainersForSelect() {
 
 async function loadContainersForParentSelect() {
     try {
-        const containers = await api.getContainers();
+        if (containerTree.length === 0) {
+            containerTree = await api.getContainerTree();
+        }
+        const flatList = buildFlatContainerList();
         const select = document.getElementById('container-parent');
         select.innerHTML = '<option value="">Нет (корневое)</option>' +
-            containers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+            flatList.map(c => `<option value="${c.id}">${escapeHtml(c.path)}</option>`).join('');
     } catch (err) {
         console.error(err);
     }
