@@ -1861,10 +1861,13 @@ async function saveContainerEdit() {
 
 async function loadContainersForSelect() {
     try {
-        const containers = await api.getContainers();
+        if (containerTree.length === 0) {
+            containerTree = await api.getContainerTree();
+        }
+        const flatList = buildFlatContainerList();
         const select = document.getElementById('item-container');
         select.innerHTML = '<option value="">Выберите место</option>' +
-            containers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('') +
+            flatList.map(c => `<option value="${c.id}">${escapeHtml(c.path)}</option>`).join('') +
             '<option value="__new__">+ Создать новое место</option>';
 
         select.onchange = function() {
@@ -1965,9 +1968,12 @@ async function openEditItem(item) {
 
     const select = document.getElementById('edit-item-container');
     try {
-        const containers = await api.getContainers();
+        if (containerTree.length === 0) {
+            containerTree = await api.getContainerTree();
+        }
+        const flatList = buildFlatContainerList();
         select.innerHTML = '<option value="">Без места</option>' +
-            containers.map(c => `<option value="${c.id}" ${c.id === item.container_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+            flatList.map(c => `<option value="${c.id}" ${c.id == item.container_id ? 'selected' : ''}>${escapeHtml(c.path)}</option>`).join('');
     } catch (err) {
         select.innerHTML = '<option value="">Без места</option>';
     }
