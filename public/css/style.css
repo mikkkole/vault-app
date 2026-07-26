@@ -1421,6 +1421,7 @@ body {
     border-radius: var(--radius);
     border: 1px solid rgba(108,92,231,0.2);
     position: relative;
+    cursor: pointer;
 }
 .mass-add-location-icon {
     font-size: 20px;
@@ -1439,7 +1440,6 @@ body {
 .mass-add-location-change {
     font-size: 12px;
     color: var(--primary-light);
-    cursor: pointer;
 }
 .mass-add-viewfinder {
     flex: 1;
