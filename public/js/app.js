@@ -883,6 +883,15 @@ function renderLabelCard() {
         return;
     }
 
+    // Save previous input before switching
+    const prevInput = document.getElementById('label-card-input');
+    if (prevInput && currentLabelIndex < massAddState.photos.length) {
+        const val = prevInput.value.trim();
+        if (val) {
+            massAddState.photos[currentLabelIndex].name = val;
+        }
+    }
+
     const photo = massAddState.photos[currentLabelIndex];
     const photoEl = document.getElementById('label-card-photo');
     const input = document.getElementById('label-card-input');
