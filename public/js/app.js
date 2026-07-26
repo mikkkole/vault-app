@@ -877,18 +877,18 @@ function updateLabelLocation() {
     }
 }
 
-function renderLabelCard() {
+function renderLabelCard(prevIndex) {
     if (currentLabelIndex >= massAddState.photos.length) {
         saveAllItems();
         return;
     }
 
     // Save previous input before switching
-    const prevInput = document.getElementById('label-card-input');
-    if (prevInput && currentLabelIndex < massAddState.photos.length) {
-        const val = prevInput.value.trim();
-        if (val) {
-            massAddState.photos[currentLabelIndex].name = val;
+    if (prevIndex !== undefined && prevIndex < massAddState.photos.length) {
+        const prevInput = document.getElementById('label-card-input');
+        if (prevInput) {
+            const val = prevInput.value.trim();
+            massAddState.photos[prevIndex].name = val;
         }
     }
 
@@ -917,16 +917,18 @@ function renderLabelCard() {
 }
 
 function skipCurrentItem() {
+    const prev = currentLabelIndex;
     currentLabelIndex++;
-    renderLabelCard();
+    renderLabelCard(prev);
     updateLabelProgress();
 }
 
 function acceptCurrentLabel() {
     const input = document.getElementById('label-card-input');
     massAddState.photos[currentLabelIndex].name = input.value.trim() || 'Без названия';
+    const prev = currentLabelIndex;
     currentLabelIndex++;
-    renderLabelCard();
+    renderLabelCard(prev);
     updateLabelProgress();
 }
 
@@ -951,10 +953,9 @@ function updateLabelDots() {
 }
 
 function jumpToItem(index) {
-    // Save current input before jumping
-    saveCurrentInput();
+    const prev = currentLabelIndex;
     currentLabelIndex = index;
-    renderLabelCard();
+    renderLabelCard(prev);
     updateLabelProgress();
 }
 
@@ -969,18 +970,18 @@ function saveCurrentInput() {
 
 function labelNavPrev() {
     if (currentLabelIndex > 0) {
-        saveCurrentInput();
+        const prev = currentLabelIndex;
         currentLabelIndex--;
-        renderLabelCard();
+        renderLabelCard(prev);
         updateLabelProgress();
     }
 }
 
 function labelNavNext() {
     if (currentLabelIndex < massAddState.photos.length - 1) {
-        saveCurrentInput();
+        const prev = currentLabelIndex;
         currentLabelIndex++;
-        renderLabelCard();
+        renderLabelCard(prev);
         updateLabelProgress();
     }
 }
