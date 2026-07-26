@@ -656,6 +656,22 @@ function changeMassAddLocation(e) {
 
 function showContainerPicker(callback) {
     const containers = cache.get('containers') || allContainers;
+    const tree = containerTree.length > 0 ? containerTree : containers;
+
+    // Build flat list with full paths
+    function flattenWithPaths(nodes, prefix) {
+        let result = [];
+        nodes.forEach(node => {
+            const path = prefix ? `${prefix} > ${node.name}` : node.name;
+            result.push({ id: node.id, path });
+            if (node.children && node.children.length) {
+                result = result.concat(flattenWithPaths(node.children, path));
+            }
+        });
+        return result;
+    }
+
+    const flatList = flattenWithPaths(tree, '');
 
     // Populate both dropdowns
     ['container-dropdown', 'container-dropdown-label'].forEach(id => {
@@ -664,8 +680,8 @@ function showContainerPicker(callback) {
         const listId = id === 'container-dropdown' ? 'container-list' : 'container-list-label';
         const list = document.getElementById(listId);
         if (!list) return;
-        list.innerHTML = containers.map(c =>
-            `<div class="category-option" onclick="selectContainerForMassAdd(${c.id})">${escapeHtml(c.name)}</div>`
+        list.innerHTML = flatList.map(c =>
+            `<div class="category-option" onclick="selectContainerForMassAdd(${c.id})">${escapeHtml(c.path)}</div>`
         ).join('');
     });
 

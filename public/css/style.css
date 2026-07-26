@@ -1767,7 +1767,7 @@ body {
     gap: 12px;
 }
 .label-review-cancel {
-    color: var(--text-secondary);
+    color: #E74C3C;
     font-weight: 600;
     background: none;
     border: none;
@@ -1808,10 +1808,10 @@ body {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    font-size: 16px;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font-size: 20px;
     cursor: pointer;
     display: flex;
     align-items: center;
