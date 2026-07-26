@@ -656,24 +656,37 @@ function changeMassAddLocation(e) {
 
 function showContainerPicker(callback) {
     const containers = cache.get('containers') || allContainers;
-    const dropdown = document.getElementById('container-dropdown');
-    if (!dropdown) return;
 
-    const list = document.getElementById('container-list');
-    list.innerHTML = containers.map(c =>
-        `<div class="category-option" onclick="selectContainerForMassAdd(${c.id})">${escapeHtml(c.name)}</div>`
-    ).join('');
+    // Populate both dropdowns
+    ['container-dropdown', 'container-dropdown-label'].forEach(id => {
+        const dropdown = document.getElementById(id);
+        if (!dropdown) return;
+        const listId = id === 'container-dropdown' ? 'container-list' : 'container-list-label';
+        const list = document.getElementById(listId);
+        if (!list) return;
+        list.innerHTML = containers.map(c =>
+            `<div class="category-option" onclick="selectContainerForMassAdd(${c.id})">${escapeHtml(c.name)}</div>`
+        ).join('');
+    });
 
     window._massAddContainerCallback = callback;
-    dropdown.classList.add('active');
+
+    // Show the active dropdown
+    const activeScreen = document.getElementById('label-review').classList.contains('active')
+        ? 'container-dropdown-label'
+        : 'container-dropdown';
+    const dropdown = document.getElementById(activeScreen);
+    if (dropdown) dropdown.classList.add('active');
 }
 
 function selectContainerForMassAdd(id) {
     if (window._massAddContainerCallback) {
         window._massAddContainerCallback(id);
     }
-    const dropdown = document.getElementById('container-dropdown');
-    if (dropdown) dropdown.classList.remove('active');
+    // Close all dropdowns
+    document.querySelectorAll('.container-select-dropdown').forEach(d => d.classList.remove('active'));
+    // Update label review location if visible
+    updateLabelLocation();
 }
 
 function compressImage(blob, maxWidth = 800) {
@@ -796,8 +809,21 @@ function openLabelReview() {
     document.getElementById('mass-add-screen').classList.remove('active');
     document.getElementById('label-review').classList.add('active');
 
+    // Show current location
+    updateLabelLocation();
+
     renderLabelCard();
     updateLabelProgress();
+}
+
+function updateLabelLocation() {
+    const nameEl = document.getElementById('label-review-location-name');
+    if (massAddState.selectedContainerId) {
+        const container = allContainers.find(c => c.id === massAddState.selectedContainerId);
+        nameEl.textContent = container ? container.name : 'Не выбрано';
+    } else {
+        nameEl.textContent = 'Не выбрано';
+    }
 }
 
 function renderLabelCard() {
@@ -815,16 +841,17 @@ function renderLabelCard() {
     input.focus();
 
     updateLabelDots();
+    updateLabelProgress();
 
     // On last item, show only "Сохранить"
     const isLast = currentLabelIndex >= massAddState.photos.length - 1;
-    const bottomBar = document.querySelector('.label-review-bottom-bar');
+    const bottomBar = document.getElementById('label-review-bottom-bar');
     if (isLast) {
         bottomBar.innerHTML = '<button class="label-bottom-btn primary" onclick="saveAllItems()">Сохранить</button>';
     } else {
         bottomBar.innerHTML = `
-            <button class="label-bottom-btn skip" onclick="skipCurrentItem()">Дальше</button>
-            <button class="label-bottom-btn primary" onclick="saveAllItems()">Сохранить все</button>
+            <button class="label-bottom-btn primary" onclick="skipCurrentItem()">Дальше</button>
+            <button class="label-bottom-btn secondary" onclick="saveAllItems()">Сохранить все</button>
         `;
     }
 }
@@ -845,16 +872,71 @@ function acceptCurrentLabel() {
 
 function updateLabelProgress() {
     const total = massAddState.photos.length;
-    const labeled = massAddState.photos.filter(p => p.name).length;
-    document.getElementById('label-progress-fill').style.width = `${(labeled / total) * 100}%`;
-    document.getElementById('label-progress-text').textContent = `${labeled}/${total}`;
+    const current = Math.min(currentLabelIndex + 1, total);
+    document.getElementById('label-progress-fill').style.width = `${(current / total) * 100}%`;
+    document.getElementById('label-progress-text').textContent = `${current}/${total}`;
+
+    // Update navigation buttons
+    const prevBtn = document.getElementById('label-nav-prev');
+    const nextBtn = document.getElementById('label-nav-next');
+    if (prevBtn) prevBtn.disabled = currentLabelIndex <= 0;
+    if (nextBtn) nextBtn.disabled = currentLabelIndex >= total - 1;
 }
 
 function updateLabelDots() {
     const dots = document.getElementById('label-review-dots');
     dots.innerHTML = massAddState.photos.map((photo, i) =>
-        `<div class="label-review-dot ${i === currentLabelIndex ? 'active' : ''} ${photo.name ? 'labeled' : ''}"></div>`
+        `<div class="label-review-dot ${i === currentLabelIndex ? 'active' : ''} ${photo.name ? 'labeled' : ''}" onclick="jumpToItem(${i})"></div>`
     ).join('');
+}
+
+function jumpToItem(index) {
+    // Save current input before jumping
+    saveCurrentInput();
+    currentLabelIndex = index;
+    renderLabelCard();
+    updateLabelProgress();
+}
+
+function saveCurrentInput() {
+    if (currentLabelIndex < massAddState.photos.length) {
+        const input = document.getElementById('label-card-input');
+        if (input) {
+            massAddState.photos[currentLabelIndex].name = input.value.trim();
+        }
+    }
+}
+
+function labelNavPrev() {
+    if (currentLabelIndex > 0) {
+        saveCurrentInput();
+        currentLabelIndex--;
+        renderLabelCard();
+        updateLabelProgress();
+    }
+}
+
+function labelNavNext() {
+    if (currentLabelIndex < massAddState.photos.length - 1) {
+        saveCurrentInput();
+        currentLabelIndex++;
+        renderLabelCard();
+        updateLabelProgress();
+    }
+}
+
+function closeLabelReview() {
+    document.getElementById('label-review').classList.remove('active');
+    document.getElementById('mass-add-screen').classList.add('active');
+}
+
+function cancelLabelReview() {
+    document.getElementById('label-review').classList.remove('active');
+    document.getElementById('mass-add-screen').classList.remove('active');
+    document.getElementById('fab-add').style.display = '';
+    document.getElementById('fab-mass-add').style.display = '';
+    massAddState.clear();
+    updateGallery();
 }
 
 async function saveAllItems() {

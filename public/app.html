@@ -527,8 +527,20 @@
     <!-- Label Review Screen -->
     <div class="label-review" id="label-review">
         <div class="label-review-header">
+            <button class="label-review-back" onclick="closeLabelReview()">&#8592;</button>
             <span class="label-review-title">Подпишите вещи</span>
-            <button class="label-review-save" onclick="saveAllItems()">&#10003;</button>
+            <div class="label-review-header-actions">
+                <button class="label-review-cancel" onclick="cancelLabelReview()">&#10005;</button>
+                <button class="label-review-save" onclick="saveAllItems()">&#10003;</button>
+            </div>
+        </div>
+        <div class="label-review-location" id="label-review-location" onclick="changeMassAddLocation(event)">
+            <span>&#128205;</span>
+            <span id="label-review-location-name">Не выбрано</span>
+            <span class="mass-add-location-change">Изменить</span>
+            <div class="container-select-dropdown" id="container-dropdown-label" style="z-index:180">
+                <div class="container-select-list" id="container-list-label"></div>
+            </div>
         </div>
         <div class="label-review-progress">
             <div class="label-review-progress-bar">
@@ -536,7 +548,11 @@
             </div>
             <span class="label-review-progress-text" id="label-progress-text">0/0</span>
         </div>
-        <div class="label-review-dots" id="label-review-dots"></div>
+        <div class="label-review-nav" id="label-review-nav">
+            <button class="label-nav-btn" id="label-nav-prev" onclick="labelNavPrev()">&#8592;</button>
+            <div class="label-review-dots" id="label-review-dots"></div>
+            <button class="label-nav-btn" id="label-nav-next" onclick="labelNavNext()">&#8594;</button>
+        </div>
         <div class="label-review-body">
             <div class="label-card" id="label-card">
                 <div class="label-card-photo" id="label-card-photo"></div>
@@ -545,9 +561,9 @@
                 </div>
             </div>
         </div>
-        <div class="label-review-bottom-bar">
-            <button class="label-bottom-btn skip" onclick="skipCurrentItem()">Дальше</button>
-            <button class="label-bottom-btn primary" onclick="saveAllItems()">Сохранить все</button>
+        <div class="label-review-bottom-bar" id="label-review-bottom-bar">
+            <button class="label-bottom-btn primary" onclick="skipCurrentItem()">Дальше</button>
+            <button class="label-bottom-btn secondary" onclick="saveAllItems()">Сохранить все</button>
         </div>
     </div>
 
