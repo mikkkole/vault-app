@@ -645,6 +645,21 @@
         </div>
     </div>
 
+    <!-- Move Container Modal -->
+    <div class="bottom-sheet-overlay" id="move-container-modal" onclick="closeMoveModal()">
+        <div class="bottom-sheet" onclick="event.stopPropagation()">
+            <div class="bottom-sheet-handle"></div>
+            <div class="bottom-sheet-header">
+                <button class="bottom-sheet-close" onclick="closeMoveModal()">&#10005;</button>
+                <div class="bottom-sheet-title">Переместить в</div>
+                <div></div>
+            </div>
+            <div class="bottom-sheet-body" style="max-height:60vh;overflow-y:auto;">
+                <div id="move-container-list"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Progress Overlay -->
     <div class="progress-overlay" id="progress-overlay">
         <div class="progress-dialog">

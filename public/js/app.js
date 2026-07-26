@@ -151,9 +151,9 @@ function bulkMove() {
 }
 
 function showContainerPickerMove() {
-    const populateDropdown = () => {
+    const populateList = () => {
         const flatList = buildFlatContainerList();
-        const list = document.getElementById('container-list');
+        const list = document.getElementById('move-container-list');
         if (!list) return;
         list.innerHTML = flatList.map(c =>
             `<div class="category-option" onclick="doBulkMove(${c.id})">${escapeHtml(c.path)}</div>`
@@ -163,35 +163,21 @@ function showContainerPickerMove() {
     if (containerTree.length === 0) {
         api.getContainerTree().then(tree => {
             containerTree = tree;
-            populateDropdown();
+            populateList();
         });
     } else {
-        populateDropdown();
+        populateList();
     }
 
-    const dropdown = document.getElementById('container-dropdown');
-    if (dropdown) {
-        dropdown.style.position = 'fixed';
-        dropdown.style.bottom = '80px';
-        dropdown.style.left = '16px';
-        dropdown.style.right = '16px';
-        dropdown.style.top = 'auto';
-        dropdown.style.zIndex = '250';
-        dropdown.classList.add('active');
-    }
+    document.getElementById('move-container-modal').classList.add('active');
+}
+
+function closeMoveModal() {
+    document.getElementById('move-container-modal').classList.remove('active');
 }
 
 async function doBulkMove(containerId) {
-    // Close dropdown
-    document.querySelectorAll('.container-select-dropdown').forEach(d => {
-        d.classList.remove('active');
-        d.style.position = '';
-        d.style.bottom = '';
-        d.style.left = '';
-        d.style.right = '';
-        d.style.top = '';
-        d.style.zIndex = '';
-    });
+    closeMoveModal();
 
     const ids = [...selectState.selected];
     showProgressOverlay(`Перенос ${ids.length} вещей...`);
