@@ -1675,6 +1675,18 @@ async function saveContainer() {
         } else if (ctx === 'mass-add') {
             setTimeout(() => {
                 document.getElementById('mass-add-screen').classList.add('active');
+                document.getElementById('fab-add').style.display = 'none';
+                document.getElementById('fab-mass-add').style.display = 'none';
+            }, 300);
+        } else if (ctx === 'add-item') {
+            setTimeout(() => {
+                showAddItem();
+                // Select the newly created container
+                const select = document.getElementById('item-container');
+                if (select) {
+                    const newOption = select.querySelector(`option[value="${container.id}"]`);
+                    if (newOption) select.value = container.id;
+                }
             }, 300);
         }
     } catch (err) {
@@ -1803,6 +1815,7 @@ async function loadContainersForSelect() {
         select.onchange = function() {
             if (this.value === '__new__') {
                 this.value = '';
+                window._containerCreateContext = 'add-item';
                 closeAddItem();
                 showAddContainer();
             }
