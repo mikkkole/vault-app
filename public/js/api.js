@@ -63,10 +63,10 @@ class VaultAPI {
         return data.data;
     }
 
-    async createContainer(name, type, description) {
+    async createContainer(name, type, parent_id) {
         const data = await this.request('containers', {
             method: 'POST',
-            body: JSON.stringify({ name, type, description })
+            body: JSON.stringify({ name, type, parent_id })
         });
         return data.data;
     }
