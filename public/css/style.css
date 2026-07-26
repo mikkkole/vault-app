@@ -1805,7 +1805,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 8px 16px 12px;
+    padding: 0 16px 8px;
 }
 .label-nav-btn {
     width: 24px;
@@ -1821,6 +1821,7 @@ body {
     justify-content: center;
     flex-shrink: 0;
     padding: 0;
+    line-height: 1;
 }
 .label-nav-btn:disabled {
     opacity: 0.3;
@@ -1860,7 +1861,7 @@ body {
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 0 16px 12px;
+    padding: 0 16px;
     flex-wrap: wrap;
 }
 .label-review-dot.active {

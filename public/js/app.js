@@ -646,6 +646,16 @@ function saveDraftMassAdd() {
 
 function changeMassAddLocation(e) {
     if (e) e.stopPropagation();
+    const isLabelReview = document.getElementById('label-review').classList.contains('active');
+    const dropdownId = isLabelReview ? 'container-dropdown-label' : 'container-dropdown';
+    const dropdown = document.getElementById(dropdownId);
+
+    // Toggle: if already open, close it
+    if (dropdown && dropdown.classList.contains('active')) {
+        dropdown.classList.remove('active');
+        return;
+    }
+
     showContainerPicker((containerId) => {
         massAddState.selectedContainerId = containerId;
         const container = allContainers.find(c => c.id === containerId);
