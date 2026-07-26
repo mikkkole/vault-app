@@ -170,10 +170,19 @@ function showContainerPickerMove() {
     }
 
     document.getElementById('move-container-modal').classList.add('active');
+    document.getElementById('move-container-modal').querySelector('.bottom-sheet').classList.add('active');
 }
 
 function closeMoveModal() {
     document.getElementById('move-container-modal').classList.remove('active');
+    document.getElementById('move-container-modal').querySelector('.bottom-sheet').classList.remove('active');
+}
+
+function moveCreateContainer() {
+    closeMoveModal();
+    showAddContainer();
+    // After container is created, we'll return to move modal
+    window._returnToMoveAfterCreate = true;
 }
 
 async function doBulkMove(containerId) {
@@ -1656,7 +1665,14 @@ async function saveContainer() {
 
         showSnackbar('Место добавлено!');
         cache.set('containers', allContainers);
+        containerTree = [];
         renderHome();
+
+        // Return to move modal if needed
+        if (window._returnToMoveAfterCreate) {
+            window._returnToMoveAfterCreate = false;
+            setTimeout(() => showContainerPickerMove(), 300);
+        }
     } catch (err) {
         // Rollback
         allContainers = allContainers.filter(c => c.id !== tempContainer.id);
