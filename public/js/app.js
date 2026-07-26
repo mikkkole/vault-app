@@ -4,12 +4,14 @@ const selectState = {
     selected: new Set(),
     longPressTimer: null,
     longPressThreshold: 500,
+    visibleItems: [],
 };
 
 function toggleSelectMode(itemId) {
     if (!selectState.active) {
         selectState.active = true;
         selectState.selected.clear();
+        updateVisibleItems();
         showActionBar();
     }
     toggleSelect(itemId);
@@ -22,6 +24,7 @@ function toggleSelect(itemId) {
         selectState.selected.add(itemId);
     }
     updateSelectUI();
+    updateActionCount();
     if (selectState.selected.size === 0) {
         exitSelectMode();
     }
@@ -34,8 +37,22 @@ function exitSelectMode() {
     updateSelectUI();
 }
 
+function updateVisibleItems() {
+    selectState.visibleItems = [];
+    document.querySelectorAll('.item-card[data-id]').forEach(card => {
+        const id = parseInt(card.dataset.id);
+        if (!isNaN(id)) selectState.visibleItems.push(id);
+    });
+}
+
 function updateSelectUI() {
-    document.querySelectorAll('.item-card').forEach(card => {
+    const grids = document.querySelectorAll('#recent-items, #search-items, .storage-grid-items');
+    grids.forEach(grid => {
+        if (selectState.active) grid.classList.add('select-mode');
+        else grid.classList.remove('select-mode');
+    });
+
+    document.querySelectorAll('.item-card[data-id]').forEach(card => {
         const id = parseInt(card.dataset.id);
         const isSelected = selectState.selected.has(id);
         card.classList.toggle('selected', isSelected);
@@ -63,8 +80,7 @@ function hideActionBar() {
 }
 
 function updateActionCount() {
-    const count = selectState.selected.size;
-    document.getElementById('select-count').textContent = count;
+    document.getElementById('select-count').textContent = selectState.selected.size;
 }
 
 // Long press handlers
@@ -101,7 +117,8 @@ function onItemContextMenu(e, itemId) {
 
 // Bulk operations
 function selectAll() {
-    allItems.forEach(item => selectState.selected.add(item.id));
+    updateVisibleItems();
+    selectState.visibleItems.forEach(id => selectState.selected.add(id));
     updateSelectUI();
     updateActionCount();
 }
@@ -116,15 +133,9 @@ async function bulkDelete() {
 
     const ids = [...selectState.selected];
     showProgressOverlay(`Удаление ${ids.length} вещей...`);
-    let cancelled = false;
 
     for (const id of ids) {
-        if (cancelled) break;
-        try {
-            await api.deleteItem(id);
-        } catch (e) {
-            console.error('Delete failed:', e);
-        }
+        try { await api.deleteItem(id); } catch (e) { console.error('Delete failed:', e); }
     }
 
     hideProgressOverlay();
@@ -136,32 +147,61 @@ async function bulkDelete() {
 
 function bulkMove() {
     if (selectState.selected.size === 0) return;
-    showContainerPickerForMove((containerId) => {
-        doBulkMove(containerId);
-    });
+    showContainerPickerMove();
 }
 
-function showContainerPickerForMove(callback) {
-    if (containerTree.length === 0) {
-        api.getContainerTree().then(tree => {
-            containerTree = tree;
-            showContainerPicker(callback);
+function showContainerPickerMove() {
+    const populateDropdown = () => {
+        const flatList = buildFlatContainerList();
+        ['container-dropdown', 'container-dropdown-label'].forEach(id => {
+            const dropdown = document.getElementById(id);
+            if (!dropdown) return;
+            const listId = id === 'container-dropdown' ? 'container-list' : 'container-list-label';
+            const list = document.getElementById(listId);
+            if (!list) return;
+            list.innerHTML = flatList.map(c =>
+                `<div class="category-option" onclick="doBulkMove(${c.id})">${escapeHtml(c.path)}</div>`
+            ).join('');
         });
+    };
+
+    if (containerTree.length === 0) {
+        api.getContainerTree().then(tree => { containerTree = tree; populateDropdown(); });
     } else {
-        showContainerPicker(callback);
+        populateDropdown();
+    }
+
+    // Use the label-review location dropdown since we're likely on home screen
+    const dropdown = document.getElementById('container-dropdown');
+    if (dropdown) {
+        // Position it at the bottom
+        dropdown.style.position = 'fixed';
+        dropdown.style.bottom = '80px';
+        dropdown.style.left = '16px';
+        dropdown.style.right = '16px';
+        dropdown.style.top = 'auto';
+        dropdown.style.zIndex = '250';
+        dropdown.classList.add('active');
     }
 }
 
 async function doBulkMove(containerId) {
+    // Close dropdown
+    document.querySelectorAll('.container-select-dropdown').forEach(d => {
+        d.classList.remove('active');
+        d.style.position = '';
+        d.style.bottom = '';
+        d.style.left = '';
+        d.style.right = '';
+        d.style.top = '';
+        d.style.zIndex = '';
+    });
+
     const ids = [...selectState.selected];
     showProgressOverlay(`Перенос ${ids.length} вещей...`);
 
     for (const id of ids) {
-        try {
-            await api.updateItem(id, { container_id: containerId });
-        } catch (e) {
-            console.error('Move failed:', e);
-        }
+        try { await api.updateItem(id, { container_id: containerId }); } catch (e) { console.error('Move failed:', e); }
     }
 
     hideProgressOverlay();
@@ -172,61 +212,119 @@ async function doBulkMove(containerId) {
     showSnackbar(`Перенесено ${ids.length} вещей в ${container ? container.name : 'место'}`);
 }
 
+// Bulk Edit (label-review style)
+let bulkEditItems = [];
+let bulkEditIndex = 0;
+
 function bulkEdit() {
     if (selectState.selected.size === 0) return;
-    showBulkEditSheet();
+    bulkEditItems = allItems.filter(i => selectState.selected.has(i.id));
+    bulkEditIndex = 0;
+    exitSelectMode();
+    showBulkEditReview();
 }
 
-function showBulkEditSheet() {
-    const items = allItems.filter(i => selectState.selected.has(i.id));
-    document.getElementById('bulk-edit-count').textContent = items.length;
+function showBulkEditReview() {
+    document.getElementById('bulk-edit-review').classList.add('active');
+    renderBulkEditCard();
+}
+
+function renderBulkEditCard() {
+    if (bulkEditIndex >= bulkEditItems.length) {
+        closeBulkEditReview();
+        return;
+    }
+
+    const item = bulkEditItems[bulkEditIndex];
+    const photoEl = document.getElementById('bulk-edit-photo');
+    const nameInput = document.getElementById('bulk-edit-name');
+    const colorInput = document.getElementById('bulk-edit-color');
+    const categoryInput = document.getElementById('bulk-edit-category');
+
+    if (item.images && item.images.length) {
+        photoEl.style.backgroundImage = `url(${item.images[0]})`;
+    } else {
+        photoEl.style.backgroundImage = '';
+    }
+    nameInput.value = item.name || '';
+    colorInput.value = item.color || '';
+    categoryInput.value = item.category || '';
 
     // Load containers
     const select = document.getElementById('bulk-edit-container');
     select.innerHTML = '<option value="">Без места</option>' +
-        allContainers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        allContainers.map(c => `<option value="${c.id}" ${c.id === item.container_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
 
-    document.getElementById('bulk-edit-overlay').classList.add('active');
-    document.getElementById('bulk-edit-sheet').classList.add('active');
+    // Update progress
+    const total = bulkEditItems.length;
+    const current = bulkEditIndex + 1;
+    document.getElementById('bulk-edit-progress-fill').style.width = `${(current / total) * 100}%`;
+    document.getElementById('bulk-edit-progress-text').textContent = `${current}/${total}`;
+
+    // Update dots
+    const dots = document.getElementById('bulk-edit-dots');
+    dots.innerHTML = bulkEditItems.map((it, i) =>
+        `<div class="label-review-dot ${i === bulkEditIndex ? 'active' : ''}"></div>`
+    ).join('');
+
+    // Update bottom bar
+    const bottomBar = document.getElementById('bulk-edit-bottom-bar');
+    const isLast = bulkEditIndex >= bulkEditItems.length - 1;
+    if (isLast) {
+        bottomBar.innerHTML = '<button class="label-bottom-btn primary" onclick="saveBulkEditAll()">Завершить</button>';
+    } else {
+        bottomBar.innerHTML = `
+            <button class="label-bottom-btn primary" onclick="bulkEditNext()">Дальше</button>
+            <button class="label-bottom-btn secondary" onclick="saveBulkEditAll()">Завершить</button>
+        `;
+    }
 }
 
-function closeBulkEdit() {
-    document.getElementById('bulk-edit-overlay').classList.remove('active');
-    document.getElementById('bulk-edit-sheet').classList.remove('active');
-}
-
-async function saveBulkEdit() {
-    const ids = [...selectState.selected];
+function saveBulkEditCurrent() {
+    const item = bulkEditItems[bulkEditIndex];
+    const name = document.getElementById('bulk-edit-name').value.trim();
     const color = document.getElementById('bulk-edit-color').value.trim();
     const category = document.getElementById('bulk-edit-category').value.trim();
     const containerId = document.getElementById('bulk-edit-container').value || null;
 
     const fields = {};
+    if (name) fields.name = name;
     if (color) fields.color = color;
     if (category) fields.category = category;
     if (containerId !== null) fields.container_id = containerId;
 
-    if (Object.keys(fields).length === 0) {
-        closeBulkEdit();
-        return;
+    if (Object.keys(fields).length > 0) {
+        api.updateItem(item.id, fields).catch(e => console.error('Update failed:', e));
+        // Update local cache
+        Object.assign(item, fields);
+    }
+}
+
+function bulkEditNext() {
+    saveBulkEditCurrent();
+    bulkEditIndex++;
+    renderBulkEditCard();
+}
+
+async function saveBulkEditAll() {
+    saveBulkEditCurrent();
+
+    // Save remaining items
+    for (let i = bulkEditIndex + 1; i < bulkEditItems.length; i++) {
+        const item = bulkEditItems[i];
+        try { await api.updateItem(item.id, {}); } catch (e) {}
     }
 
-    showProgressOverlay(`Редактирование ${ids.length} вещей...`);
-
-    for (const id of ids) {
-        try {
-            await api.updateItem(id, fields);
-        } catch (e) {
-            console.error('Update failed:', e);
-        }
-    }
-
-    hideProgressOverlay();
-    closeBulkEdit();
-    exitSelectMode();
+    closeBulkEditReview();
     cache.remove('items');
     loadHome();
-    showSnackbar(`Обновлено ${ids.length} вещей`);
+    showSnackbar(`Обновлено ${bulkEditItems.length} вещей`);
+}
+
+function closeBulkEditReview() {
+    document.getElementById('bulk-edit-review').classList.remove('active');
+    bulkEditItems = [];
+    bulkEditIndex = 0;
 }
 
 function showProgressOverlay(text) {
@@ -236,6 +334,21 @@ function showProgressOverlay(text) {
 
 function hideProgressOverlay() {
     document.getElementById('progress-overlay').classList.remove('active');
+}
+
+function buildFlatContainerList() {
+    function flatten(nodes, prefix) {
+        let result = [];
+        nodes.forEach(node => {
+            const path = prefix ? `${prefix} > ${node.name}` : node.name;
+            result.push({ id: node.id, path });
+            if (node.children && node.children.length) {
+                result = result.concat(flatten(node.children, path));
+            }
+        });
+        return result;
+    }
+    return flatten(containerTree.length > 0 ? containerTree : allContainers, '');
 }
 
 // Vault App - Main JavaScript

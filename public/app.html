@@ -601,30 +601,45 @@
         </div>
     </div>
 
-    <!-- Bulk Edit Bottom Sheet -->
-    <div class="bottom-sheet-overlay" id="bulk-edit-overlay" onclick="closeBulkEdit()"></div>
-    <div class="bottom-sheet" id="bulk-edit-sheet">
-        <div class="bottom-sheet-handle"></div>
-        <div class="bottom-sheet-header">
-            <button class="bottom-sheet-close" onclick="closeBulkEdit()">&#10005;</button>
-            <div class="bottom-sheet-title">Редактировать (<span id="bulk-edit-count">0</span>)</div>
-            <button class="bottom-sheet-save" onclick="saveBulkEdit()"><span class="btn-text">Применить</span></button>
+    <!-- Bulk Edit Review -->
+    <div class="label-review" id="bulk-edit-review">
+        <div class="label-review-header">
+            <button class="label-review-back" onclick="closeBulkEditReview()">&#8592;</button>
+            <span class="label-review-title">Редактирование</span>
+            <div class="label-review-header-actions">
+                <button class="label-review-save" onclick="saveBulkEditAll()">&#10003;</button>
+                <button class="label-review-cancel" onclick="closeBulkEditReview()">&#10005;</button>
+            </div>
         </div>
-        <div class="bottom-sheet-body">
-            <div class="form-group">
-                <label class="form-label">Цвет</label>
-                <input type="text" id="bulk-edit-color" class="form-input" placeholder="Оставить без изменений">
+        <div class="label-review-progress">
+            <div class="label-review-progress-bar">
+                <div class="label-review-progress-fill" id="bulk-edit-progress-fill"></div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Категория</label>
-                <input type="text" id="bulk-edit-category" class="form-input" placeholder="Оставить без изменений">
+            <span class="label-review-progress-text" id="bulk-edit-progress-text">0/0</span>
+        </div>
+        <div class="label-review-nav">
+            <button class="label-nav-btn" onclick="if(bulkEditIndex>0){saveBulkEditCurrent();bulkEditIndex--;renderBulkEditCard();}">&#8592;</button>
+            <div class="label-review-dots" id="bulk-edit-dots"></div>
+            <button class="label-nav-btn" onclick="if(bulkEditIndex<bulkEditItems.length-1){saveBulkEditCurrent();bulkEditIndex++;renderBulkEditCard();}">&#8594;</button>
+        </div>
+        <div class="label-review-body">
+            <div class="label-card">
+                <div class="label-card-photo" id="bulk-edit-photo"></div>
+                <div class="label-card-form">
+                    <input class="label-card-input" id="bulk-edit-name" placeholder="Название">
+                    <div style="display:flex;gap:8px;margin-top:8px;">
+                        <input class="label-card-input" id="bulk-edit-color" placeholder="Цвет" style="flex:1">
+                        <input class="label-card-input" id="bulk-edit-category" placeholder="Категория" style="flex:1">
+                    </div>
+                    <select class="label-card-input" id="bulk-edit-container" style="margin-top:8px">
+                        <option value="">Без места</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label">Место хранения</label>
-                <select id="bulk-edit-container" class="form-input">
-                    <option value="">Оставить без изменений</option>
-                </select>
-            </div>
+        </div>
+        <div class="label-review-bottom-bar" id="bulk-edit-bottom-bar">
+            <button class="label-bottom-btn primary" onclick="bulkEditNext()">Дальше</button>
+            <button class="label-bottom-btn secondary" onclick="saveBulkEditAll()">Завершить</button>
         </div>
     </div>
 

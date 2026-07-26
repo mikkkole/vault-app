@@ -2107,21 +2107,18 @@ body {
     font-weight: 700;
     color: white;
     z-index: 5;
-}
-.item-card.selected .item-check {
-    display: flex;
-    background: var(--primary);
-    border-color: var(--primary);
-}
-.item-card:not(.selected):not(.select-mode) .item-check {
-    display: none;
+    transition: all 0.15s ease;
 }
 .select-mode .item-check {
     display: flex;
 }
 .select-mode .item-card:not(.selected) .item-check {
     background: var(--surface);
-    border-color: var(--border);
+    border-color: var(--primary);
+}
+.item-card.selected .item-check {
+    background: var(--primary);
+    border-color: var(--primary);
 }
 .item-card.selected {
     outline: 2px solid var(--primary);
