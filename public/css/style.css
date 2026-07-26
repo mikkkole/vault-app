@@ -1641,6 +1641,19 @@ body {
     opacity: 0.5;
     cursor: not-allowed;
 }
+.mass-add-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.mass-add-actions .mass-add-done {
+    flex: 1;
+    margin-top: 0;
+}
+.mass-add-save-raw {
+    background: var(--dark-surface) !important;
+    border: 1px solid var(--dark-border) !important;
+}
 
 /* Mass add close confirm dialog */
 .mass-add-close-confirm-overlay {

@@ -601,6 +601,8 @@ function openMassAdd() {
     }
     massAddState.currentPhase = 'camera';
     document.getElementById('mass-add-screen').classList.add('active');
+    document.getElementById('fab-add').style.display = 'none';
+    document.getElementById('fab-mass-add').style.display = 'none';
     updateGallery();
 }
 
@@ -609,6 +611,8 @@ function closeMassAdd() {
         document.getElementById('mass-add-close-overlay').classList.add('active');
     } else {
         document.getElementById('mass-add-screen').classList.remove('active');
+        document.getElementById('fab-add').style.display = '';
+        document.getElementById('fab-mass-add').style.display = '';
         massAddState.clear();
     }
 }
@@ -621,6 +625,8 @@ function discardMassAdd() {
     massAddState.clear();
     document.getElementById('mass-add-screen').classList.remove('active');
     document.getElementById('mass-add-close-overlay').classList.remove('active');
+    document.getElementById('fab-add').style.display = '';
+    document.getElementById('fab-mass-add').style.display = '';
     updateGallery();
 }
 
@@ -633,6 +639,8 @@ function saveDraftMassAdd() {
     massAddState.clear();
     document.getElementById('mass-add-screen').classList.remove('active');
     document.getElementById('mass-add-close-overlay').classList.remove('active');
+    document.getElementById('fab-add').style.display = '';
+    document.getElementById('fab-mass-add').style.display = '';
     showSnackbar('Черновик сохранён (без фото)');
 }
 
@@ -772,6 +780,9 @@ function updateGallery() {
     const doneBtn = document.getElementById('mass-add-done');
     doneBtn.disabled = massAddState.photos.length === 0;
     doneBtn.textContent = `Подписать вещи (${massAddState.photos.length})`;
+
+    const saveRawBtn = document.getElementById('mass-add-save-raw');
+    saveRawBtn.disabled = massAddState.photos.length === 0;
 }
 
 // ===== Label Review =====
@@ -820,13 +831,6 @@ function acceptCurrentLabel() {
     updateLabelProgress();
 }
 
-function skipAllUnlabeled() {
-    massAddState.photos.forEach(p => {
-        if (!p.name) p.name = 'Без названия';
-    });
-    saveAllItems();
-}
-
 function updateLabelProgress() {
     const total = massAddState.photos.length;
     const labeled = massAddState.photos.filter(p => p.name).length;
@@ -843,38 +847,45 @@ function updateLabelDots() {
 
 async function saveAllItems() {
     const saveBtn = document.querySelector('.label-review-save');
-    saveBtn.disabled = true;
+    if (saveBtn) saveBtn.disabled = true;
 
     massAddState.currentPhase = 'saving';
 
-    // Save names for current item if in labeling phase
-    if (massAddState.currentPhase === 'labeling' && currentLabelIndex < massAddState.photos.length) {
+    // Save name for current item if still in labeling phase
+    if (currentLabelIndex < massAddState.photos.length) {
         const input = document.getElementById('label-card-input');
         if (input && input.value.trim()) {
             massAddState.photos[currentLabelIndex].name = input.value.trim();
         }
     }
 
+    await doSaveItems();
+
+    if (saveBtn) saveBtn.disabled = false;
+}
+
+async function saveAllRaw() {
+    massAddState.currentPhase = 'saving';
+    await doSaveItems();
+}
+
+async function doSaveItems() {
     const itemsData = massAddState.photos.map(photo => ({
         name: photo.name || 'Без названия',
         container_id: massAddState.selectedContainerId,
     }));
 
     try {
-        // 1. Create items via batch endpoint
         const itemsResponse = await api.createItemsBatch(itemsData, massAddState.selectedContainerId);
 
         if (!itemsResponse.data || itemsResponse.data.length === 0) {
             showSnackbar('Ошибка: вещи не созданы');
-            saveBtn.disabled = false;
             return;
         }
 
-        // 2. Upload photos
         const files = massAddState.photos.map(p => p.blob);
         const itemIds = itemsResponse.data.map(item => item.id);
 
-        // Upload in batches of 10
         const batchSize = 10;
         for (let i = 0; i < itemIds.length; i += batchSize) {
             const batchIds = itemIds.slice(i, i + batchSize);
@@ -891,20 +902,18 @@ async function saveAllItems() {
             showSnackbar(`Добавлено ${uploaded} вещей`);
         }
 
-        // 3. Clear and close
         massAddState.clear();
         document.getElementById('label-review').classList.remove('active');
         document.getElementById('mass-add-screen').classList.remove('active');
+        document.getElementById('fab-add').style.display = '';
+        document.getElementById('fab-mass-add').style.display = '';
 
-        // 4. Refresh UI
         cache.remove('items');
         loadHome();
 
     } catch (err) {
         console.error('Save all items error:', err);
         showSnackbar('Ошибка сохранения: ' + err.message);
-    } finally {
-        saveBtn.disabled = false;
     }
 }
 

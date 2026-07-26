@@ -513,9 +513,14 @@
                 <div class="mass-add-gallery" id="mass-add-gallery"></div>
                 <div class="mass-add-gallery-badge" id="mass-add-gallery-badge">0</div>
             </div>
-            <button class="mass-add-done" id="mass-add-done" onclick="openLabelReview()" disabled>
-                Подписать вещи (0)
-            </button>
+            <div class="mass-add-actions">
+                <button class="mass-add-done mass-add-save-raw" id="mass-add-save-raw" onclick="saveAllRaw()" disabled>
+                    Сохранить без подписи
+                </button>
+                <button class="mass-add-done" id="mass-add-done" onclick="openLabelReview()" disabled>
+                    Подписать вещи (0)
+                </button>
+            </div>
         </div>
     </div>
 
@@ -537,15 +542,11 @@
                 <div class="label-card-photo" id="label-card-photo"></div>
                 <div class="label-card-form">
                     <input class="label-card-input" id="label-card-input" placeholder="Название вещи">
-                    <div class="label-card-hint">
-                        <span>Нажмите Enter для следующей</span>
-                        <button class="label-card-skip" onclick="skipCurrentItem()">Пропустить</button>
-                    </div>
                 </div>
             </div>
         </div>
         <div class="label-review-bottom-bar">
-            <button class="label-bottom-btn skip" onclick="skipAllUnlabeled()">Пропустить невписанные</button>
+            <button class="label-bottom-btn skip" onclick="skipCurrentItem()">Дальше</button>
             <button class="label-bottom-btn primary" onclick="saveAllItems()">Сохранить все</button>
         </div>
     </div>
