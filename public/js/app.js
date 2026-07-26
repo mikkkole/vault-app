@@ -747,37 +747,55 @@ function compressImage(blob, maxWidth = 800) {
     });
 }
 
+function cameraFallback() {
+    return new Promise((resolve, reject) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) resolve(file);
+            else reject(new Error('User cancelled'));
+        };
+        input.click();
+    });
+}
+
 async function capturePhoto() {
     try {
         let blob;
 
+        // Try Capacitor Camera first
         if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera) {
-            const { Camera, CameraResultType, CameraSource } = window.Capacitor.Plugins;
-            const image = await Camera.getPhoto({
-                quality: 90,
-                allowEditing: false,
-                resultType: CameraResultType.Blob,
-                source: CameraSource.Camera,
-                width: 1024,
-                height: 1024,
-            });
-            blob = image.blob;
+            try {
+                const { Camera, CameraResultType, CameraSource } = window.Capacitor.Plugins;
+                const image = await Camera.getPhoto({
+                    quality: 90,
+                    allowEditing: false,
+                    resultType: CameraResultType.Base64,
+                    source: CameraSource.Camera,
+                    width: 1024,
+                    height: 1024,
+                });
+                // Convert base64 to blob
+                const base64 = image.base64String || image;
+                const byteCharacters = atob(base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                blob = new Blob([byteArray], { type: 'image/jpeg' });
+            } catch (capacitorErr) {
+                console.warn('Capacitor camera failed, trying fallback:', capacitorErr);
+                blob = await cameraFallback();
+            }
         } else {
-            // Fallback: use file input
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.capture = 'environment';
-
-            blob = await new Promise((resolve, reject) => {
-                input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) resolve(file);
-                    else reject(new Error('User cancelled'));
-                };
-                input.click();
-            });
+            blob = await cameraFallback();
         }
+
+        if (!blob) return;
 
         const compressedBlob = await compressImage(blob, 800);
 
