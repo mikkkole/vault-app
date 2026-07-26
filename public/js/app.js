@@ -153,28 +153,24 @@ function bulkMove() {
 function showContainerPickerMove() {
     const populateDropdown = () => {
         const flatList = buildFlatContainerList();
-        ['container-dropdown', 'container-dropdown-label'].forEach(id => {
-            const dropdown = document.getElementById(id);
-            if (!dropdown) return;
-            const listId = id === 'container-dropdown' ? 'container-list' : 'container-list-label';
-            const list = document.getElementById(listId);
-            if (!list) return;
-            list.innerHTML = flatList.map(c =>
-                `<div class="category-option" onclick="doBulkMove(${c.id})">${escapeHtml(c.path)}</div>`
-            ).join('');
-        });
+        const list = document.getElementById('container-list');
+        if (!list) return;
+        list.innerHTML = flatList.map(c =>
+            `<div class="category-option" onclick="doBulkMove(${c.id})">${escapeHtml(c.path)}</div>`
+        ).join('');
     };
 
     if (containerTree.length === 0) {
-        api.getContainerTree().then(tree => { containerTree = tree; populateDropdown(); });
+        api.getContainerTree().then(tree => {
+            containerTree = tree;
+            populateDropdown();
+        });
     } else {
         populateDropdown();
     }
 
-    // Use the label-review location dropdown since we're likely on home screen
     const dropdown = document.getElementById('container-dropdown');
     if (dropdown) {
-        // Position it at the bottom
         dropdown.style.position = 'fixed';
         dropdown.style.bottom = '80px';
         dropdown.style.left = '16px';
@@ -226,6 +222,8 @@ function bulkEdit() {
 
 function showBulkEditReview() {
     document.getElementById('bulk-edit-review').classList.add('active');
+    document.getElementById('fab-add').style.display = 'none';
+    document.getElementById('fab-mass-add').style.display = 'none';
     renderBulkEditCard();
 }
 
@@ -253,7 +251,7 @@ function renderBulkEditCard() {
     // Load containers
     const select = document.getElementById('bulk-edit-container');
     select.innerHTML = '<option value="">Без места</option>' +
-        allContainers.map(c => `<option value="${c.id}" ${c.id === item.container_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+        allContainers.map(c => `<option value="${c.id}" ${c.id == item.container_id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
 
     // Update progress
     const total = bulkEditItems.length;
@@ -278,6 +276,29 @@ function renderBulkEditCard() {
             <button class="label-bottom-btn secondary" onclick="saveBulkEditAll()">Завершить</button>
         `;
     }
+}
+
+function bulkEditChangePhoto() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const item = bulkEditItems[bulkEditIndex];
+        try {
+            await api.uploadPhoto(item.id, file);
+            // Update local image
+            if (!item.images) item.images = [];
+            item.images.unshift(URL.createObjectURL(file));
+            renderBulkEditCard();
+            showSnackbar('Фото заменено');
+        } catch (err) {
+            showSnackbar('Ошибка загрузки фото');
+        }
+    };
+    input.click();
 }
 
 function saveBulkEditCurrent() {
@@ -323,6 +344,8 @@ async function saveBulkEditAll() {
 
 function closeBulkEditReview() {
     document.getElementById('bulk-edit-review').classList.remove('active');
+    document.getElementById('fab-add').style.display = '';
+    document.getElementById('fab-mass-add').style.display = '';
     bulkEditItems = [];
     bulkEditIndex = 0;
 }
@@ -680,6 +703,7 @@ function renderFilterTags() {
     const locations = [...new Set(allItems.map(i => i.container_name).filter(Boolean))].sort();
     const locContainer = document.getElementById('filter-locations');
     locContainer.innerHTML = '<span class="tag active" onclick="toggleLocation(this)">Все места</span>' +
+        '<span class="tag" onclick="toggleLocation(this)">Без места</span>' +
         locations.map(l => `<span class="tag" onclick="toggleLocation(this)">${escapeHtml(l)}</span>`).join('');
 }
 
@@ -747,7 +771,9 @@ function applyFilters() {
     }
 
     // Location filter
-    if (activeLocation !== 'Все места') {
+    if (activeLocation === 'Без места') {
+        filtered = filtered.filter(i => !i.container_name);
+    } else if (activeLocation !== 'Все места') {
         filtered = filtered.filter(i => i.container_name === activeLocation);
     }
 
