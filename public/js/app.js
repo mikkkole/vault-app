@@ -846,6 +846,7 @@ function updateLabelDots() {
 }
 
 async function saveAllItems() {
+    if (massAddState.currentPhase === 'saving') return;
     const saveBtn = document.querySelector('.label-review-save');
     if (saveBtn) saveBtn.disabled = true;
 
@@ -865,6 +866,7 @@ async function saveAllItems() {
 }
 
 async function saveAllRaw() {
+    if (massAddState.currentPhase === 'saving') return;
     massAddState.currentPhase = 'saving';
     await doSaveItems();
 }
