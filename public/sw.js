@@ -1,28 +1,13 @@
-const CACHE_NAME = 'vault-v8';
-const STATIC_ASSETS = [
-    '/',
-    '/app.html',
-    '/css/style.css',
-    '/js/api.js',
-    '/js/auth.js',
-    '/js/app.js',
-    '/js/push.js',
-    '/js/payments.js',
-    '/js/onboarding.js',
-    '/manifest.json'
-];
+const CACHE_NAME = 'vault-v9';
 
 self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-    );
     self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
     event.waitUntil(
         caches.keys().then(keys =>
-            Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+            Promise.all(keys.map(k => caches.delete(k)))
         )
     );
     self.clients.claim();
@@ -31,9 +16,10 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // Skip non-http schemes (chrome-extension, etc.)
+    // Skip non-http schemes
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
+    // API: network only
     if (url.pathname.startsWith('/api/')) {
         event.respondWith(
             fetch(event.request).catch(() =>
@@ -46,16 +32,18 @@ self.addEventListener('fetch', event => {
         return;
     }
 
+    // Everything else: network first, fallback to cache
     event.respondWith(
-        caches.match(event.request).then(cached => {
-            if (cached) return cached;
-            return fetch(event.request).then(response => {
-                if (response.ok && event.request.method === 'GET') {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                }
-                return response;
-            }).catch(() => {
+        fetch(event.request).then(response => {
+            // Cache a copy for offline use
+            if (response.ok && event.request.method === 'GET') {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
+            return response;
+        }).catch(() => {
+            return caches.match(event.request).then(cached => {
+                if (cached) return cached;
                 if (event.request.mode === 'navigate') {
                     return caches.match('/app.html');
                 }
